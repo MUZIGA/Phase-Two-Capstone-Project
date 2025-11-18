@@ -4,7 +4,8 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.i
+  const id = params.id
+
   await new Promise(resolve => setTimeout(resolve, 200))
 
   return NextResponse.json({
