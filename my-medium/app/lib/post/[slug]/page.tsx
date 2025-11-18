@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from ".
-import { usePosts } from "../../lib/post-context";
-import { useAuth } from "../../lib/auth-context";
-import { CommentSection } from "@/components/comment.section";
-import { LikeButton } from "@/components/like.button";
-import { FollowButton } from "@/components/follow.button";
+import { Button } from "../../../components/ui/button"
+import { usePosts } from "../../../lib/post-context"
+import { useAuth } from "../../../lib/auth-context"
+import { CommentSection } from "../../../components/comment-section"
+import { LikeButton } from "../../../components/like-button"
+import { FollowButton } from "../../../components/follow-button"
 
 import Link from "next/link";
 import { useEffect, useState } from "react";

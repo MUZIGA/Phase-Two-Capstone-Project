@@ -20,6 +20,7 @@ export interface Post {
   likes?: number
 }
 
+// Define Post Context type
 interface PostContextType {
   posts: Post[]
   drafts: Post[]
@@ -63,7 +64,9 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
     setDrafts([newDraft, ...drafts])
     return id
-  
+  }
+
+
   const updateDraft = (id: string, updates: Partial<Post>) => {
     setDrafts(drafts.map(draft => 
       draft.id === id 

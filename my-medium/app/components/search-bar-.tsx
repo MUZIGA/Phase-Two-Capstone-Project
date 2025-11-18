@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearch } from '@/lib/search-context'
-import { Button } from '@/components/ui/button'
+import { useSearch } from '../lib/search-context'
+import { Button } from '../components/ui/button'
 
 export function SearchBar() {
   const { searchQuery, setSearchQuery } = useSearch()

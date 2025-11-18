@@ -1,11 +1,11 @@
-use client'
+'use client'
 
 import { useAuth } from '../lib/auth-context'
-import { usePosts } from '../lib/post-contex'
+import { usePosts } from '../lib/post-context'
 import { useUserStats } from '../lib/../hooks/use-user-stats'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Button } from '../components/ui/button'
+import { Card } from '../components/ui/card'
 import Link from 'next/link'
 import { useEffect } from 'react'
 

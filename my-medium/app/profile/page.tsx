@@ -1,18 +1,14 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import Container from "@/components/Container";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePostsByAuthor } from "@/hooks/usePosts";
-import { useFollowingCount, useFollowersCount } from "@/hooks/useFollows";
+import { useAuth } from "../lib/auth-context";
 export default function ProfilePage() {
   const { user } = useAuth();
   const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
     user?.id || ""
   );
-  const { data: followingCount = 0 } = useFollowingCount(user?.id || "");
-  const { data: followersCount = 0 } = useFollowersCount(user?.id || "");
+  const { data: followingCount = 0 } = followingCount(user?.id || "");
+  const { data: followersCount = 0 } = followersCount(user?.id || "");
   const isLoading = postsLoading || !user;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -179,3 +175,12 @@ export default function ProfilePage() {
 
 
 
+function usePostsByAuthor(arg0: string): { data?: never[] | undefined; isLoading: any; } {
+    throw new Error("Function not implemented.");
+}
+
+       
+      </div>
+   
+  );
+}

@@ -2,8 +2,8 @@
 
 
 import { useAuth } from '../lib/auth-context'
-import { useSocial } from "../lib/social-context"
-import { Button } from '@/components/ui/button'
+import { useSocial } from '../lib/social-context'
+import { Button } from '../components/ui/button'
 
 interface FollowButtonProps {
   userId: string

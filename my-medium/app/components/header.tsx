@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 import { useState } from 'react'
 import { useAuth } from '../lib/auth-context'
-import { Button } from '@/components/ui/button'
+import { Button } from '../components/ui/button'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)

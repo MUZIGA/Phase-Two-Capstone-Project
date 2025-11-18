@@ -1,6 +1,6 @@
 'use client'
 
-import { usePosts } from '../lib/post-contex'
+import { usePosts } from '../lib/post-context'
 import { useSocial } from '../lib/social-context'
 import { useMemo } from 'react'
 

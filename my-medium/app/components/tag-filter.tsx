@@ -1,8 +1,8 @@
 'use client'
 
-import { useSearch } from '@/lib/search-context'
-import { usePosts } from '@/lib/post-context'
-import { Button } from '@/components/ui/button'
+import { useSearch } from '../lib/search-context'
+import { usePosts } from "../lib/post-context"
+import { Button } from '../components/ui/button'
 
 export function TagFilter() {
   const { selectedTag, setSelectedTag, getAllTags } = useSearch()

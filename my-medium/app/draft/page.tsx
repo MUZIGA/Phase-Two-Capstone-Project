@@ -1,9 +1,9 @@
 'use client'
 
 import { useAuth } from '../lib/auth-context'
-import { usePosts } from '../lib/post-contex'
+import { usePosts } from '../lib/post-context'
 import { Button } from '../components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card } from '../components/ui/card'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
