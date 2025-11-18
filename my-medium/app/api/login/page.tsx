@@ -1,4 +1,4 @@
-import { AuthForm } from '../components/auth-form'
+import { AuthForm } from '../../components/auth-form'
 
 export const metadata = {
   title: 'Sign In - WriteHub',
