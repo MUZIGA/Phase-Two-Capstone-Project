@@ -25,7 +25,7 @@ export function FeedCard({ post }: FeedCardProps) {
       )}
 
       <div className="p-6">
-        {/* Tags */}
+        
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {post.tags.slice(0, 3).map(tag => (
@@ -36,19 +36,19 @@ export function FeedCard({ post }: FeedCardProps) {
           </div>
         )}
 
-        {/* Title */}
+
         <Link href={`/posts/${post.slug}`}>
           <h3 className="text-xl font-bold text-foreground hover:text-primary mb-2 line-clamp-2">
             {post.title}
           </h3>
         </Link>
 
-        {/* Excerpt */}
+        
         <p className="text-muted-foreground mb-4 line-clamp-2">
           {post.excerpt}
         </p>
 
-        {/* Author and stats */}
+        
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
