@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useState, ReactNode } from 'react'
-import { Post } from '../lib/post-contex'
+import { Post } from '../types'
 
 interface SearchContextType {
   searchQuery: string

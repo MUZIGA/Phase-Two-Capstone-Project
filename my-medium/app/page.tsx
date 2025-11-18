@@ -1,14 +1,15 @@
+// ...existing code...
 'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
-import { SearchBar } from './components/search-bar-'
+import { SearchBar } from './components/search-bar' // fixed: removed trailing '-'
 import { TagFilter } from './components/tag-filter'
 import { FeedCard } from './components/feedCard'
 import { Pagination } from './components/pagination'
-import { FeedSkeleton } from './components/loading -skeleton'
+import { FeedSkeleton } from './components/loading-skeleton'
 import { usePostsHook } from './lib/../hooks/use-post'
 import { usePagination } from './lib/../hooks/use-pagination'
 import { useSearch } from './lib/search-context'
@@ -17,11 +18,11 @@ import { Card } from './components/ui/card'
 
 export default function Home() {
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
-  const { posts, isLoading } = usePostsHook({ sortBy })
+  const { posts = [], isLoading } = usePostsHook({ sortBy })
   const { searchQuery, selectedTag } = useSearch()
 
   const {
-    currentItems,
+    currentItems = [],
     currentPage,
     totalPages,
     hasNextPage,
@@ -29,11 +30,11 @@ export default function Home() {
     goToPage
   } = usePagination({ items: posts, itemsPerPage: 6 })
 
-  const featuredPost = posts[0]
+  const featuredPost = posts && posts.length > 0 ? posts[0] : null
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      
       <section className="py-16 px-4 md:py-24 bg-indigo-600 border-b border-indigo-700">
         <div className="max-w-4xl mx-auto text-center text-white">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -102,7 +103,7 @@ export default function Home() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Featured</h2>
                 <Card className="overflow-hidden hover:shadow-2xl transition-shadow cursor-pointer border border-gray-200">
                   {featuredPost.image && (
-                    <div className="aspect-video overflow-hidden bg-gray-100">
+                    <div className="relative aspect-video overflow-hidden bg-gray-100">
                       <Image
                         src={featuredPost.image || "/placeholder.svg"}
                         alt={featuredPost.title}
@@ -130,13 +131,13 @@ export default function Home() {
                   {searchQuery ? 'Search Results' : selectedTag ? `Tagged: ${selectedTag}` : 'Latest Stories'}
                 </h2>
                 <span className="text-sm text-gray-500">
-                  {posts.length} post{posts.length !== 1 ? 's' : ''}
+                  {(posts?.length ?? 0)} post{(posts?.length ?? 0) !== 1 ? 's' : ''}
                 </span>
               </div>
 
               {isLoading ? (
                 <FeedSkeleton />
-              ) : posts.length === 0 ? (
+              ) : (posts?.length ?? 0) === 0 ? (
                 <Card className="p-12 text-center bg-white border border-gray-200">
                   <p className="text-gray-500 mb-4">
                     {searchQuery ? 'No posts found matching your search' : 'No posts yet'}
@@ -145,7 +146,7 @@ export default function Home() {
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {currentItems.map(post => (
+                    {currentItems?.map(post => (
                       <FeedCard key={post.id} post={post} />
                     ))}
                   </div>

@@ -23,14 +23,14 @@ export interface Post {
 // Define Post Context type
 interface PostContextType {
   posts: Post[]
-  drafts: Post[]
+  drafts: Draft[]
   createDraft: (title: string, content: string, authorId: string, author: string) => string
-  updateDraft: (id: string, updates: Partial<Post>) => void
+  updateDraft: (id: string, updates: Partial<Draft>) => void
   publishPost: (id: string, tags: string[], image?: string) => void
   updatePost: (id: string, updates: Partial<Post>) => void
   deletePost: (id: string) => void
   deleteDraft: (id: string) => void
-  getDraftById: (id: string) => Post | undefined
+  getDraftById: (id: string) => Draft | undefined
   getPostById: (id: string) => Post | undefined
   getPostBySlug: (slug: string) => Post | undefined
 }
@@ -39,7 +39,7 @@ export const PostContext = createContext<PostContextType | undefined>(undefined)
 
 export function PostProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([])
-  const [drafts, setDrafts] = useState<Post[]>([])
+  const [drafts, setDrafts] = useState<Draft[]>([])
 
   
   const createDraft = (title: string, content: string, authorId: string, author: string): string => {
@@ -111,7 +111,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
   }
 
 
-  const getDraftById = (id: string): Post | undefined => {
+  const getDraftById = (id: string): Draft | undefined => {
     return drafts.find(draft => draft.id === id)
   }
 

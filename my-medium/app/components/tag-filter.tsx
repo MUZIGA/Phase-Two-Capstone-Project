@@ -1,10 +1,14 @@
 'use client'
 
 import { useSearch } from '../lib/search-context'
-import { usePosts } from "../lib/post-context"
+import { usePosts } from '../lib/post-context'
 import { Button } from '../components/ui/button'
 
-export function TagFilter() {
+interface TagFilterProps {
+  className?: string
+}
+
+export function TagFilter({ className = '' }: TagFilterProps) {
   const { selectedTag, setSelectedTag, getAllTags } = useSearch()
   const { posts } = usePosts()
 
@@ -15,7 +19,7 @@ export function TagFilter() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${className}`.trim()}>
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-foreground">Tags</h3>
         {selectedTag && (
@@ -23,7 +27,8 @@ export function TagFilter() {
             size="sm"
             variant="ghost"
             onClick={() => setSelectedTag(null)}
-            className="text-xs"
+            className="text-xs hover:bg-transparent"
+            aria-label="Clear tag filter"
           >
             Clear
           </Button>
@@ -36,8 +41,12 @@ export function TagFilter() {
             key={tag}
             variant={selectedTag === tag ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-            className="text-xs"
+            className={`transition-colors ${
+              selectedTag === tag ? 'bg-primary' : 'hover:bg-accent'
+            }`}
+            onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+            aria-label={`Filter by ${tag} tag`}
+            aria-pressed={selectedTag === tag}
           >
             {tag}
           </Button>
