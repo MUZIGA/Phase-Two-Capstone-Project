@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { useSocial } from '../lib/social-context'
-import { Button } from '@/components/ui/button'
+import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 
 interface CommentSectionProps {

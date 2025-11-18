@@ -14,7 +14,6 @@ export function EditorPreview({ title, content, excerpt }: EditorPreviewProps) {
         <p className="text-muted-foreground mb-4">{excerpt || 'Your excerpt will appear here...'}</p>
       </div>
 
-      {/* Content Preview */}
       <div className="prose prose-invert max-w-none">
         <div 
           className="text-foreground leading-relaxed space-y-4"
