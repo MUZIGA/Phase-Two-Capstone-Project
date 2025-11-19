@@ -12,11 +12,6 @@ export function Footer() {
             <h3 className="font-bold text-foreground mb-4">WriteHub</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground transition">
-                  About
-                </Link>
-              </li>
-              <li>
                 <Link href="/contact" className="text-muted-foreground hover:text-foreground transition">
                   Contact
                 </Link>

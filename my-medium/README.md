@@ -2,7 +2,14 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, configure your environment:
+
+1. Create a `.env.local` file in the project root with the following variables:
+   ```
+   MONGODB_URI=your-mongodb-connection-string
+   MONGODB_DB=writehub
+   ```
+2. Install dependencies and run the development server:
 
 ```bash
 npm run dev

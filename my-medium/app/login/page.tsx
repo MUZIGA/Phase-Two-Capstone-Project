@@ -1,4 +1,4 @@
-import { AuthForm } from '../../components/auth-form'
+import { AuthForm } from '../components/Auth-form'
 
 export const metadata = {
   title: 'Sign In - WriteHub',
@@ -22,3 +22,4 @@ export default function LoginPage() {
     </main>
   )
 }
+

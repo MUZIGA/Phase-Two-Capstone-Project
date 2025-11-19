@@ -1,7 +1,7 @@
 'use client'
 
 import { Card } from '../components/ui/card'
-import { SearchBar } from '../components/search-bar-'
+import { SearchBar } from '../components/search-bar'
 import { TagFilter } from '../components/tag-filter'
 import { FeedCard } from '../components/feedCard'
 import { useSearch } from '../lib/search-context'

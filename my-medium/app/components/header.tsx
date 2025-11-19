@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-
 import { useState } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { Button } from '../components/ui/button'
@@ -22,7 +21,7 @@ export function Header() {
             <span className="font-bold text-lg hidden sm:inline text-foreground">WriteHub</span>
           </Link>
 
-          
+          {/* NAVIGATION WITHOUT ABOUT */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-foreground hover:text-primary transition">
               Home
@@ -30,12 +29,8 @@ export function Header() {
             <Link href="/explore" className="text-foreground hover:text-primary transition">
               Explore
             </Link>
-            <Link href="/about" className="text-foreground hover:text-primary transition">
-              About
-            </Link>
           </nav>
 
-          
           <div className="flex items-center gap-2 md:gap-4">
             {user ? (
               <>

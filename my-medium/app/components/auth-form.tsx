@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '../lib/auth-context'
 
 type Props = { type?: 'signup' | 'login' }
 
 export function AuthForm({ type = 'signup' }: Props) {
   const router = useRouter()
+  const { signup, login } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,24 +36,19 @@ export function AuthForm({ type = 'signup' }: Props) {
     setIsSubmitting(true)
     try {
       if (type === 'signup') {
-        const res = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password })
-        })
-        const data = await res.json()
-        if (!res.ok) {
-          setError(data?.message || 'Signup failed')
-          setIsSubmitting(false)
-          return
-        }
-        router.push('/login')
+        await signup(email, password, name, { autoLogin: false })
+        router.push('/login?registered=1')
       } else {
-        // login flow placeholder
-        router.push('/')
+        await login(email, password)
+        router.push('/write')
       }
     } catch (err) {
-      setError('Network error')
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
+    } finally {
       setIsSubmitting(false)
     }
   }

@@ -13,8 +13,8 @@ export default function DashboardPage() {
   const { user, logout } = useAuth()
   const { posts, drafts } = usePosts()
   const router = useRouter()
+  const stats = useUserStats(user?.id ?? '')
 
-  
   useEffect(() => {
     if (!user) {
       router.push('/login')
@@ -24,9 +24,6 @@ export default function DashboardPage() {
   if (!user) {
     return null
   }
-
-  
-  const stats = useUserStats(user.id)
 
   
   const userDrafts = drafts.filter(d => d.authorId === user.id)
