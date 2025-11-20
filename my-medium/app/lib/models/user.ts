@@ -41,8 +41,6 @@ const UserSchema = new Schema<UserDocument>(
   }
 )
 
-UserSchema.index({ email: 1 }, { unique: true })
-
 const UserModel: Model<UserDocument> = models.User || mongoose.model<UserDocument>('User', UserSchema)
 
 export default UserModel
