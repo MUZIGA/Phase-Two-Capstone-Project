@@ -1,39 +1,19 @@
-'use server'
+import { MongoClient } from 'mongodb'
 
-import mongoose, { Mongoose } from 'mongoose'
+const uri = process.env.MONGODB_URI
+const dbName = process.env.MONGODB_DB || 'App'
 
-const MONGODB_URI = process.env.MONGODB_URI
-
-if (!MONGODB_URI) {
-  throw new Error('Missing MONGODB_URI. Please set it in your environment variables.')
-}
+if (!uri) throw new Error('Please define MONGODB_URI in .env.local')
 
 declare global {
   // eslint-disable-next-line no-var
-  var mongooseConnection: {
-    conn: Mongoose | null
-    promise: Promise<Mongoose> | null
-  } | undefined
+  var _mongoClientPromise: Promise<MongoClient> | undefined
 }
 
-const cached = global.mongooseConnection || {
-  conn: null,
-  promise: null,
+const client = new MongoClient(uri)
+const clientPromise = global._mongoClientPromise || (global._mongoClientPromise = client.connect())
+
+export async function getDb() {
+  const c = await clientPromise
+  return c.db(dbName)
 }
-
-export async function connectToDatabase(): Promise<Mongoose> {
-  if (cached.conn) {
-    return cached.conn
-  }
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      dbName: process.env.MONGODB_DB || undefined,
-    })
-  }
-
-  cached.conn = await cached.promise
-  global.mongooseConnection = cached
-  return cached.conn
-}
-
