@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { getDb } from '../lib/db' 
+import { connectToDatabase } from '../lib/db'
+import User from '../lib/models/user'
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +18,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Password too short' }, { status: 400 })
     }
 
-    const db = await getDb()
-    const users = db.collection('users')
+    await connectToDatabase()
 
-    const exists = await users.findOne({ email })
+    const exists = await User.findOne({ email }).lean()
     if (exists) {
       return NextResponse.json({ message: 'Email already registered' }, { status: 409 })
     }
@@ -28,15 +28,16 @@ export async function POST(req: NextRequest) {
     const salt = await bcrypt.genSalt(10)
     const hash = await bcrypt.hash(password, salt)
 
-    const res = await users.insertOne({
+    const user = new User({
       name,
       email,
-      passwordHash: hash,
-      createdAt: new Date()
+      password: hash, 
     })
+    await user.save()
 
-    return NextResponse.json({ ok: true, id: res.insertedId.toString() }, { status: 201 })
+    return NextResponse.json({ ok: true, id: user._id.toString() }, { status: 201 })
   } catch (err) {
+    console.error('signup error', err)
     return NextResponse.json({ message: 'Server error' }, { status: 500 })
   }
 }

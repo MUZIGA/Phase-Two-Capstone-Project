@@ -1,19 +1,21 @@
-import { MongoClient } from 'mongodb'
+import mongoose from 'mongoose';
 
-const uri = process.env.MONGODB_URI
-const dbName = process.env.MONGODB_DB || 'App'
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
-if (!uri) throw new Error('Please define MONGODB_URI in .env.local')
-
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined
+if (!MONGODB_URI) {
+  throw new Error("Please add your MongoDB URI to .env file");
 }
 
-const client = new MongoClient(uri)
-const clientPromise = global._mongoClientPromise || (global._mongoClientPromise = client.connect())
+export async function connectToDatabase() {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
 
-export async function getDb() {
-  const c = await clientPromise
-  return c.db(dbName)
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log("Connected to MongoDB");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    throw new Error("Failed to connect to MongoDB");
+  }
 }
