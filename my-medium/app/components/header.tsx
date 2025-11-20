@@ -38,7 +38,7 @@ export function Header() {
                   <Link href="/write">✏️ Write</Link>
                 </Button>
                 <Button variant="ghost" asChild className="hidden sm:inline-flex text-xs md:text-sm">
-                  <Link href="/drafts">Drafts</Link>
+                  <Link href="/draft">Drafts</Link>
                 </Button>
                 <Button variant="ghost" asChild className="hidden sm:inline-flex text-xs md:text-sm">
                   <Link href="/dashboard">Dashboard</Link>

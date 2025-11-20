@@ -86,7 +86,7 @@ export default function DashboardPage() {
               <Link href="/write">Write New Post</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/drafts">View Drafts ({userDrafts.length})</Link>
+              <Link href="/draft">View Drafts ({userDrafts.length})</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href={`/profile/${user.id}`}>View Profile</Link>

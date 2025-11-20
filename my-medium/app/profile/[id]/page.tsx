@@ -4,13 +4,13 @@ import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
 
 type ProfilePageProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
-  const { id } = params
+  const { id } = await params
 
   await connectToDatabase()
   const user = await User.findById(id).lean()
