@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useState, ReactNode } from 'react'
+import React, { createContext, useState, ReactNode, useEffect } from 'react'
 
 
 export interface Post {
@@ -37,9 +37,46 @@ interface PostContextType {
 
 export const PostContext = createContext<PostContextType | undefined>(undefined)
 
+const DRAFTS_STORAGE_KEY = 'writehub_drafts'
+
 export function PostProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([])
   const [drafts, setDrafts] = useState<Draft[]>([])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const stored = window.localStorage.getItem(DRAFTS_STORAGE_KEY)
+      if (stored) {
+        const parsed: Draft[] = JSON.parse(stored).map((draft: Draft) => ({
+          ...draft,
+          createdAt: new Date(draft.createdAt),
+          updatedAt: new Date(draft.updatedAt),
+        }))
+        setDrafts(parsed)
+      }
+    } catch (error) {
+      console.error('Failed to load drafts from storage', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(
+        DRAFTS_STORAGE_KEY,
+        JSON.stringify(
+          drafts.map((draft) => ({
+            ...draft,
+            createdAt: draft.createdAt instanceof Date ? draft.createdAt.toISOString() : draft.createdAt,
+            updatedAt: draft.updatedAt instanceof Date ? draft.updatedAt.toISOString() : draft.updatedAt,
+          }))
+        )
+      )
+    } catch (error) {
+      console.error('Failed to save drafts to storage', error)
+    }
+  }, [drafts])
 
   
   const createDraft = (title: string, content: string, authorId: string, author: string): string => {
