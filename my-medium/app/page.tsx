@@ -124,7 +124,7 @@ export default function Home() {
               </section>
             )}
 
-            {/* Posts Feed */}
+            
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-800">

@@ -30,6 +30,8 @@ export async function POST(request: Request) {
       email: email.toLowerCase(),
       password: hashedPassword,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+      followers: [],
+      following: [],
     })
 
     return NextResponse.json(
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
           id: newUser._id.toString(),
           name: newUser.name,
           email: newUser.email,
+          avatar: newUser.avatar,
           createdAt: newUser.createdAt,
         },
       },

@@ -52,27 +52,48 @@ export default function WritePage() {
   }, [content]);
 
   // Save or update draft
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!title.trim()) {
       alert("Please enter a title");
       return;
     }
 
+    if (!user) {
+      alert("Please sign in to save drafts");
+      router.push("/login");
+      return;
+    }
+
+    // Check if token exists
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert("Your session has expired. Please log in again.");
+      router.push("/login");
+      return;
+    }
+
     const tagArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
 
-    if (currentDraftId) {
-      updateDraft(currentDraftId, { title, content, excerpt, tags: tagArray, image });
-      alert("Draft updated!");
-    } else {
-      const newDraftId = createDraft(title, content, user?.id || "", user?.name || "");
-      setCurrentDraftId(newDraftId);
-      updateDraft(newDraftId, { tags: tagArray, image });
-      alert("Draft saved!");
+    try {
+      if (currentDraftId) {
+        await updateDraft(currentDraftId, { title, content, excerpt, tags: tagArray, image });
+        alert("Draft updated!");
+      } else {
+        const newDraftId = await createDraft(title, content, user.id, user.name);
+        setCurrentDraftId(newDraftId);
+        if (tagArray.length > 0 || image) {
+          await updateDraft(newDraftId, { tags: tagArray, image });
+        }
+        alert("Draft saved!");
+      }
+    } catch (error: any) {
+      console.error("Failed to save draft:", error);
+      alert(error.message || "Failed to save draft. Please try again.");
     }
   };
 
   // Publish post
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!title.trim()) {
       alert("Please enter a title");
       return;
@@ -83,16 +104,35 @@ export default function WritePage() {
       return;
     }
 
+    if (!user) {
+      alert("Please sign in to publish posts");
+      return;
+    }
+
     setIsPublishing(true);
 
-    setTimeout(() => {
+    try {
       const tagArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
-      if (currentDraftId) publishPost(currentDraftId, tagArray, image);
+      
+      // If no draft exists, create one first
+      let draftId = currentDraftId;
+      if (!draftId) {
+        draftId = await createDraft(title, content, user.id, user.name);
+        setCurrentDraftId(draftId);
+        if (tagArray.length > 0 || image) {
+          await updateDraft(draftId, { tags: tagArray, image });
+        }
+      }
 
+      await publishPost(draftId, tagArray, image);
       alert("Post published successfully!");
       router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to publish post:", error);
+      alert("Failed to publish post. Please try again.");
+    } finally {
       setIsPublishing(false);
-    }, 1000);
+    }
   };
 
   if (!user) return null;

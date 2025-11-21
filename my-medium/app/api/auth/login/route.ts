@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
+import { generateToken, createAuthResponse } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +25,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
     }
 
-    return NextResponse.json(
+    const token = generateToken({
+      userId: user._id.toString(),
+      email: user.email,
+    })
+
+    return createAuthResponse(
       {
         user: {
           id: user._id.toString(),
@@ -34,8 +40,10 @@ export async function POST(request: Request) {
           bio: user.bio,
           createdAt: user.createdAt,
         },
+        token,
       },
-      { status: 200 }
+      200,
+      token
     )
   } catch (error) {
     console.error('[LOGIN_ERROR]', error)

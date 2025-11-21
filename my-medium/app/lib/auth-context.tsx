@@ -83,6 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(authenticatedUser)
       localStorage.setItem('auth_user', JSON.stringify(authenticatedUser))
+      
+      // Store JWT token if provided
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token)
+      } else {
+        // Try to get token from response header
+        const authHeader = response.headers.get('Authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          localStorage.setItem('auth_token', authHeader.substring(7))
+        }
+      }
     } catch (error) {
       console.error('Login error:', error)
       throw error
@@ -129,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('auth_user')
+    localStorage.removeItem('auth_token')
   }
 
   const updateProfile = async (data: Partial<User>) => {
