@@ -44,3 +44,11 @@
 - [ ] 6.3 Optimize images
 - [ ] 6.4 Add Open Graph tags
 - [ ] 6.5 Vercel deployment config
+
+## Phase 7: Social Features Implementation 🗣️
+- [x] 7.1 Implement Comment API (GET/POST with MongoDB)
+- [x] 7.2 Implement Post Like API
+- [x] 7.3 Implement Comment Like API
+- [x] 7.4 Implement Follow API
+- [x] 7.5 Update Social Context to use API calls
+- [x] 7.6 Test social features with MongoDB

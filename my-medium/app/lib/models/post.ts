@@ -67,7 +67,6 @@ const PostSchema = new Schema<PostDocument>(
 
 // Index for faster queries
 PostSchema.index({ published: 1, createdAt: -1 })
-PostSchema.index({ slug: 1 })
 PostSchema.index({ tags: 1 })
 PostSchema.index({ author: 1 })
 

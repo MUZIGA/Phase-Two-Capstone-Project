@@ -7,8 +7,8 @@ export default function ProfilePage() {
   const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
     user?.id || ""
   );
-  const { data: followingCount = 0 } = followingCount(user?.id || "");
-  const { data: followersCount = 0 } = followersCount(user?.id || "");
+  const followingCount = 0;
+  const followersCount = 0;
   const isLoading = postsLoading || !user;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -122,7 +122,7 @@ export default function ProfilePage() {
                       href={`/posts/${post.slug}`}
                       className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
                     >
-                      {post.featuredImage ? (
+                      {post.image ? (
                         <div className="relative mb-4 h-32 w-full overflow-hidden rounded-lg">
                           <Image
                             src={post.featuredImage}
@@ -144,7 +144,7 @@ export default function ProfilePage() {
                         {post.excerpt || stripHtml(post.content)}
                       </p>
                       <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>{formatDate(post.publishedAt)}</span>
+                        <span>{formatDate(post.createdAt.toString())}</span>
                         <div className="flex items-center gap-3">
                           {post.views !== undefined && (
                             <span>:eye: {post.views}</span>
@@ -175,12 +175,23 @@ export default function ProfilePage() {
 
 
 
-function usePostsByAuthor(arg0: string): { data?: never[] | undefined; isLoading: any; } {
-    throw new Error("Function not implemented.");
+import { usePosts } from "../lib/post-context";
+import ProtectedRoute from "../components/ProtectedRoute";
+import Container from "../components/Container";
+import React from "react";
+
+function usePostsByAuthor(authorId: string) {
+  const { posts, isLoading } = usePosts();
+  const data = posts.filter(post => post.authorId === authorId && post.published);
+  return { data, isLoading };
 }
 
-       
-      </div>
-   
-  );
+function followingCount(authorId: string) {
+  // Placeholder for following count
+  return { data: 0 };
+}
+
+function followersCount(authorId: string) {
+  // Placeholder for followers count
+  return { data: 0 };
 }

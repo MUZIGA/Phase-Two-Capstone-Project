@@ -2,166 +2,207 @@
 
 import React, { createContext, useState, ReactNode } from 'react'
 
-
 export interface Comment {
   id: string
   postId: string
   author: string
   authorId: string
   content: string
-  createdAt: Date
-  likes: string[] 
+  createdAt: string
+  likes: string[]
 }
 
+interface PostLike {
+  liked: boolean
+  count: number
+}
 
 interface SocialContextType {
-  
-  comments: Comment[]
-  addComment: (postId: string, content: string, authorId: string, author: string) => void
-  deleteComment: (id: string) => void
+  comments: { [postId: string]: Comment[] }
+  loadComments: (postId: string) => Promise<void>
+  addComment: (postId: string, content: string, authorId: string, authorName: string) => Promise<void>
+  deleteComment: (commentId: string) => Promise<void>
   getCommentsByPost: (postId: string) => Comment[]
-  likeComment: (commentId: string, userId: string) => void
+  likeComment: (commentId: string, userId: string) => Promise<void>
 
-  
-  postLikes: { [key: string]: string[] } // postId -> array of user IDs
-  likePost: (postId: string, userId: string) => void
-  unlikePost: (postId: string, userId: string) => void
-  hasUserLikedPost: (postId: string, userId: string) => boolean
-  getLikeCount: (postId: string) => number
+  postLikes: { [postId: string]: PostLike }
+  loadPostLike: (postId: string) => Promise<void>
+  likePost: (postId: string) => Promise<void>
 
-  follows: { [key: string]: string[] } // userId -> array of following user IDs
-  followUser: (followerId: string, followeeId: string) => void
-  unfollowUser: (followerId: string, followeeId: string) => void
-  isFollowing: (followerId: string, followeeId: string) => boolean
-  getFollowerCount: (userId: string) => number
-  getFollowingCount: (userId: string) => number
+  follows: { [userId: string]: { following: boolean; followersCount: number; followingCount: number } }
+  loadFollow: (userId: string) => Promise<void>
+  followUser: (userId: string) => Promise<void>
 }
 
 export const SocialContext = createContext<SocialContextType | undefined>(undefined)
 
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('auth_token') : ''}`,
+}
+
+async function handleApiResponse(response: Response) {
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const message = data?.error || 'Something went wrong. Please try again.'
+    throw new Error(message)
+  }
+  return data
+}
+
 export function SocialProvider({ children }: { children: ReactNode }) {
-  const [comments, setComments] = useState<Comment[]>([])
-  const [postLikes, setPostLikes] = useState<{ [key: string]: string[] }>({})
-  const [follows, setFollows] = useState<{ [key: string]: string[] }>({})
+  const [comments, setComments] = useState<{ [postId: string]: Comment[] }>({})
+  const [postLikes, setPostLikes] = useState<{ [postId: string]: PostLike }>({})
+  const [follows, setFollows] = useState<{ [userId: string]: { following: boolean; followersCount: number; followingCount: number } }>({})
 
   // ===== COMMENTS =====
-  const addComment = (postId: string, content: string, authorId: string, author: string) => {
-    const newComment: Comment = {
-      id: Math.random().toString(),
-      postId,
-      author,
-      authorId,
-      content,
-      createdAt: new Date(),
-      likes: []
+  const loadComments = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/post/${postId}/comments`)
+      const data = await handleApiResponse(response)
+      setComments(prev => ({
+        ...prev,
+        [postId]: data.data || []
+      }))
+    } catch (error) {
+      console.error('Failed to load comments:', error)
     }
-    setComments([newComment, ...comments])
   }
 
-  const deleteComment = (id: string) => {
-    setComments(comments.filter(c => c.id !== id))
+  const addComment = async (postId: string, content: string, authorId: string, authorName: string) => {
+    try {
+      const response = await fetch(`/api/comment`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify({ postId, content, authorId, authorName }),
+      })
+      const data = await handleApiResponse(response)
+      await loadComments(postId) // Reload comments
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+      throw error
+    }
   }
 
-  const getCommentsByPost = (postId: string): Comment[] => {
-    return comments.filter(c => c.postId === postId).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
+  const deleteComment = async (commentId: string) => {
+    try {
+      const response = await fetch(`/api/comment/${commentId}`, {
+        method: 'DELETE',
+        headers: API_HEADERS,
+      })
+      await handleApiResponse(response)
+      // Reload comments for all posts (simplified)
+      Object.keys(comments).forEach(postId => loadComments(postId))
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      throw error
+    }
   }
 
-  const likeComment = (commentId: string, userId: string) => {
-    setComments(comments.map(c => {
-      if (c.id === commentId) {
-        const hasLiked = c.likes.includes(userId)
-        return {
-          ...c,
-          likes: hasLiked ? c.likes.filter(id => id !== userId) : [...c.likes, userId]
+  const getCommentsByPost = (postId: string) => {
+    return comments[postId] || []
+  }
+
+  const likeComment = async (commentId: string, userId: string) => {
+    try {
+      const response = await fetch(`/api/comment/${commentId}/like`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify({ userId }),
+      })
+      await handleApiResponse(response)
+      // Reload comments for all posts (simplified)
+      Object.keys(comments).forEach(postId => loadComments(postId))
+    } catch (error) {
+      console.error('Failed to like comment:', error)
+      throw error
+    }
+  }
+
+  // ===== POST LIKES =====
+  const loadPostLike = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/post/${postId}/clap`)
+      const data = await handleApiResponse(response)
+      setPostLikes(prev => ({
+        ...prev,
+        [postId]: { liked: data.liked, count: data.likesCount }
+      }))
+    } catch (error) {
+      console.error('Failed to load post like:', error)
+    }
+  }
+
+  const likePost = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/post/${postId}/clap`, {
+        method: 'POST',
+        headers: API_HEADERS,
+      })
+      const data = await handleApiResponse(response)
+      setPostLikes(prev => ({
+        ...prev,
+        [postId]: { liked: data.data.liked, count: data.data.likesCount }
+      }))
+    } catch (error) {
+      console.error('Failed to like post:', error)
+      throw error
+    }
+  }
+
+  // ===== FOLLOWS =====
+  const loadFollow = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/follow`)
+      const data = await handleApiResponse(response)
+      setFollows(prev => ({
+        ...prev,
+        [userId]: {
+          following: data.following,
+          followersCount: data.followersCount,
+          followingCount: data.followingCount
         }
-      }
-      return c
-    }))
+      }))
+    } catch (error) {
+      console.error('Failed to load follow status:', error)
+    }
   }
 
-  
-  const likePost = (postId: string, userId: string) => {
-    setPostLikes(prev => {
-      const currentLikes = prev[postId] || []
-      if (!currentLikes.includes(userId)) {
-        return { ...prev, [postId]: [...currentLikes, userId] }
-      }
-      return prev
-    })
-  }
-
-  const unlikePost = (postId: string, userId: string) => {
-    setPostLikes(prev => {
-      const currentLikes = prev[postId] || []
-      return { ...prev, [postId]: currentLikes.filter(id => id !== userId) }
-    })
-  }
-
-  const hasUserLikedPost = (postId: string, userId: string): boolean => {
-    return (postLikes[postId] || []).includes(userId)
-  }
-
-  const getLikeCount = (postId: string): number => {
-    return (postLikes[postId] || []).length
-  }
-
-  
-  const followUser = (followerId: string, followeeId: string) => {
-    if (followerId === followeeId) return 
-
-    setFollows(prev => {
-      const currentFollowing = prev[followerId] || []
-      if (!currentFollowing.includes(followeeId)) {
-        return { ...prev, [followerId]: [...currentFollowing, followeeId] }
-      }
-      return prev
-    })
-  }
-
-  const unfollowUser = (followerId: string, followeeId: string) => {
-    setFollows(prev => {
-      const currentFollowing = prev[followerId] || []
-      return { ...prev, [followerId]: currentFollowing.filter(id => id !== followeeId) }
-    })
-  }
-
-  const isFollowing = (followerId: string, followeeId: string): boolean => {
-    return (follows[followerId] || []).includes(followeeId)
-  }
-
-  const getFollowerCount = (userId: string): number => {
-    
-    let count = 0
-    Object.values(follows).forEach(following => {
-      if (following.includes(userId)) count++
-    })
-    return count
-  }
-
-  const getFollowingCount = (userId: string): number => {
-    return (follows[userId] || []).length
+  const followUser = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/follow`, {
+        method: 'POST',
+        headers: API_HEADERS,
+      })
+      const data = await handleApiResponse(response)
+      setFollows(prev => ({
+        ...prev,
+        [userId]: {
+          following: data.data.following,
+          followersCount: data.data.followersCount,
+          followingCount: data.data.followingCount
+        }
+      }))
+    } catch (error) {
+      console.error('Failed to follow user:', error)
+      throw error
+    }
   }
 
   return (
     <SocialContext.Provider value={{
       comments,
+      loadComments,
       addComment,
       deleteComment,
       getCommentsByPost,
       likeComment,
       postLikes,
+      loadPostLike,
       likePost,
-      unlikePost,
-      hasUserLikedPost,
-      getLikeCount,
       follows,
+      loadFollow,
       followUser,
-      unfollowUser,
-      isFollowing,
-      getFollowerCount,
-      getFollowingCount
     }}>
       {children}
     </SocialContext.Provider>

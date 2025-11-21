@@ -19,13 +19,15 @@ export interface Post {
   likes?: number
 }
 
-export interface Draft extends Post {}
+export type Draft = Post
 
-// Define Post Context type
+// Context type
 interface PostContextType {
   posts: Post[]
   drafts: Draft[]
   isLoading: boolean
+  error: string | null
+  setError: (err: string | null) => void
   createDraft: (title: string, content: string, authorId: string, author: string) => Promise<string>
   updateDraft: (id: string, updates: Partial<Draft>) => Promise<void>
   publishPost: (id: string, tags: string[], image?: string) => Promise<void>
@@ -44,96 +46,84 @@ export function PostProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([])
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Fetch published posts from API
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch('/api/post?page=1')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setPosts(data.data.map((post: any) => ({
-              ...post,
-              createdAt: new Date(post.createdAt),
-              updatedAt: new Date(post.updatedAt),
-            })))
-          }
+  // Fetch published posts
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch('/api/post?page=1')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setPosts(data.data.map((post: any) => ({
+            ...post,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+          })))
         }
-      } catch (error) {
-        console.error('Failed to fetch posts:', error)
-      } finally {
-        setIsLoading(false)
       }
+    } catch (err) {
+      setError('Failed to fetch posts')
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchPosts()
   }, [])
 
-  // Fetch user's drafts (unpublished posts) when user is logged in
-  useEffect(() => {
-    const fetchUserDrafts = async () => {
-      try {
-        const storedUser = localStorage.getItem('auth_user')
-        if (!storedUser) {
-          setDrafts([])
-          return
-        }
+  // Fetch drafts for current user
+  const fetchDrafts = async () => {
+    try {
+      const storedUser = localStorage.getItem('auth_user')
+      if (!storedUser) {
+        setDrafts([])
+        return
+      }
 
-        const user = JSON.parse(storedUser)
-        const token = localStorage.getItem('auth_token')
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        }
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`
-        }
+      const user = JSON.parse(storedUser)
+      const token = localStorage.getItem('auth_token')
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
 
-        // Fetch user's unpublished posts
-        const response = await fetch(`/api/post?authorId=${user.id}&published=false`, { headers })
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success && data.data) {
-            setDrafts(data.data.map((draft: any) => ({
-              ...draft,
-              createdAt: new Date(draft.createdAt),
-              updatedAt: new Date(draft.updatedAt),
-            })))
-          } else {
-            setDrafts([])
-          }
+      const response = await fetch(`/api/post?authorId=${user.id}&published=false`, { headers })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          setDrafts(data.data.map((draft: any) => ({
+            ...draft,
+            createdAt: new Date(draft.createdAt),
+            updatedAt: new Date(draft.updatedAt),
+          })))
         } else {
           setDrafts([])
         }
-      } catch (error) {
-        console.error('Failed to fetch drafts:', error)
+      } else {
         setDrafts([])
       }
+    } catch (err) {
+      setError('Failed to fetch drafts')
+      setDrafts([])
     }
+  }
 
-    // Check for user changes periodically and on mount
-    fetchUserDrafts()
-    const interval = setInterval(fetchUserDrafts, 5000) // Refresh every 5 seconds
+  useEffect(() => {
+    fetchDrafts()
+    const interval = setInterval(fetchDrafts, 5000)
     return () => clearInterval(interval)
   }, [])
 
-  
+  // Create a draft
   const createDraft = async (title: string, content: string, authorId: string, author: string): Promise<string> => {
+    setError(null)
     try {
       const token = localStorage.getItem('auth_token')
-      
-      if (!token) {
-        throw new Error('You must be logged in to save drafts. Please log in and try again.')
-      }
-
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      }
+      if (!token) throw new Error('You must be logged in to save drafts.')
 
       const response = await fetch('/api/post', {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title,
           content,
@@ -144,19 +134,8 @@ export function PostProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        })
-        
-        // If unauthorized, the user might not be logged in
-        if (response.status === 401) {
-          throw new Error('Please log in to save drafts. Your session may have expired.')
-        }
-        
-        throw new Error(errorData.error || `Failed to create draft: ${response.status} ${response.statusText}`)
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || `Failed to create draft: ${response.status}`)
       }
 
       const data = await response.json()
@@ -168,13 +147,14 @@ export function PostProvider({ children }: { children: ReactNode }) {
           createdAt: new Date(data.data.createdAt),
           updatedAt: new Date(data.data.updatedAt),
         }
-        setDrafts([newDraft, ...drafts])
+        setDrafts(prev => [newDraft, ...prev])
         return data.data.id
       }
-      throw new Error('Invalid response format')
-    } catch (error) {
-      console.error('Failed to create draft:', error)
-      // Fallback to local storage if API fails
+
+      throw new Error('Invalid response from server')
+    } catch (err: any) {
+      setError(err.message)
+      // fallback to local draft
       const id = Math.random().toString()
       const now = new Date()
       const newDraft: Post = {
@@ -190,64 +170,52 @@ export function PostProvider({ children }: { children: ReactNode }) {
         updatedAt: now,
         slug: title.toLowerCase().replace(/\s+/g, '-'),
         views: 0,
-        likes: 0
+        likes: 0,
       }
-      setDrafts([newDraft, ...drafts])
+      setDrafts(prev => [newDraft, ...prev])
       return id
     }
   }
 
-
+  // Update draft
   const updateDraft = async (id: string, updates: Partial<Post>) => {
+    setError(null)
     try {
       const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/post/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
+        headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
         body: JSON.stringify(updates),
       })
 
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
-          setDrafts(drafts.map(draft => 
-            draft.id === id 
-              ? { ...draft, ...data.data, updatedAt: new Date(data.data.updatedAt) }
-              : draft
-          ))
+          setDrafts(prev =>
+            prev.map(d => (d.id === id ? { ...d, ...data.data, updatedAt: new Date(data.data.updatedAt) } : d))
+          )
           return
         }
       }
-    } catch (error) {
-      console.error('Failed to update draft:', error)
+    } catch (err) {
+      setError('Failed to update draft')
     }
 
-    // Fallback to local update
-    setDrafts(drafts.map(draft => 
-      draft.id === id 
-        ? { ...draft, ...updates, updatedAt: new Date() }
-        : draft
-    ))
+    // fallback local update
+    setDrafts(prev =>
+      prev.map(d => (d.id === id ? { ...d, ...updates, updatedAt: new Date() } : d))
+    )
   }
 
-  
+  // Publish post
   const publishPost = async (id: string, tags: string[], image?: string) => {
+    setError(null)
     try {
       const token = localStorage.getItem('auth_token')
       const response = await fetch(`/api/post/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          published: true,
-          tags,
-          image,
-        }),
+        headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
+        body: JSON.stringify({ published: true, tags, image }),
       })
 
       if (response.ok) {
@@ -258,115 +226,78 @@ export function PostProvider({ children }: { children: ReactNode }) {
             createdAt: new Date(data.data.createdAt),
             updatedAt: new Date(data.data.updatedAt),
           }
-          setPosts([publishedPost, ...posts])
+          setPosts(prev => [publishedPost, ...prev])
           deleteDraft(id)
           return
         }
       }
-    } catch (error) {
-      console.error('Failed to publish post:', error)
+    } catch (err) {
+      setError('Failed to publish post')
     }
 
-    // Fallback to local update
+    // fallback local publish
     const draft = drafts.find(d => d.id === id)
     if (!draft) return
-
-    const publishedPost: Post = {
-      ...draft,
-      tags,
-      image,
-      published: true,
-      updatedAt: new Date()
-    }
-
-    setPosts([publishedPost, ...posts])
+    const publishedPost: Post = { ...draft, tags, image, published: true, updatedAt: new Date() }
+    setPosts(prev => [publishedPost, ...prev])
     deleteDraft(id)
   }
 
+  // Local updates
   const updatePost = (id: string, updates: Partial<Post>) => {
-    setPosts(posts.map(post =>
-      post.id === id
-        ? { ...post, ...updates, updatedAt: new Date() }
-        : post
-    ))
+    setPosts(prev => prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date() } : p)))
   }
 
-  
   const deletePost = (id: string) => {
-    setPosts(posts.filter(post => post.id !== id))
+    setPosts(prev => prev.filter(p => p.id !== id))
   }
 
-  
-  const deleteDraft = async (id: string) => {
+  const deleteDraft = (id: string) => {
+    setDrafts(prev => prev.filter(d => d.id !== id))
+  }
+
+  const getDraftById = (id: string) => drafts.find(d => d.id === id)
+  const getPostById = (id: string) => posts.find(p => p.id === id)
+  const getPostBySlug = (slug: string) => posts.find(p => p.slug === slug)
+
+  const refreshPosts = async () => {
     try {
-      const token = localStorage.getItem('auth_token')
-      const response = await fetch(`/api/post/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      })
-
+      const response = await fetch('/api/post?page=1')
       if (response.ok) {
-        setDrafts(drafts.filter(draft => draft.id !== id))
-        return
+        const data = await response.json()
+        if (data.success && data.data) {
+          setPosts(data.data.map((post: any) => ({
+            ...post,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+          })))
+        }
       }
-    } catch (error) {
-      console.error('Failed to delete draft:', error)
+    } catch (err) {
+      setError('Failed to refresh posts')
     }
-
-    // Fallback to local delete
-    setDrafts(drafts.filter(draft => draft.id !== id))
-  }
-
-
-  const getDraftById = (id: string): Draft | undefined => {
-    return drafts.find(draft => draft.id === id)
-  }
-
-  // Get a post by ID
-  const getPostById = (id: string): Post | undefined => {
-    return posts.find(post => post.id === id)
-  }
-
-  // Get a post by slug (URL-friendly name)
-  const getPostBySlug = (slug: string): Post | undefined => {
-    return posts.find(post => post.slug === slug)
   }
 
   return (
-    <PostContext.Provider value={{ 
-      posts, 
-      drafts, 
-      createDraft, 
-      updateDraft,
-      publishPost,
-      updatePost,
-      deletePost,
-      deleteDraft,
-      getDraftById,
-      getPostById,
-      getPostBySlug,
-      isLoading,
-      refreshPosts: async () => {
-        try {
-          const response = await fetch('/api/post?page=1')
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success && data.data) {
-              setPosts(data.data.map((post: any) => ({
-                ...post,
-                createdAt: new Date(post.createdAt),
-                updatedAt: new Date(post.updatedAt),
-              })))
-            }
-          }
-        } catch (error) {
-          console.error('Failed to refresh posts:', error)
-        }
-      }
-    }}>
+    <PostContext.Provider
+      value={{
+        posts,
+        drafts,
+        isLoading,
+        error,
+        setError,
+        createDraft,
+        updateDraft,
+        publishPost,
+        updatePost,
+        deletePost,
+        deleteDraft,
+        getDraftById,
+        getPostById,
+        getPostBySlug,
+        refreshPosts,
+      }}
+    >
       {children}
     </PostContext.Provider>
   )
@@ -374,8 +305,6 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
 export function usePosts() {
   const context = React.useContext(PostContext)
-  if (context === undefined) {
-    throw new Error('usePosts must be used within PostProvider')
-  }
+  if (!context) throw new Error('usePosts must be used within PostProvider')
   return context
 }

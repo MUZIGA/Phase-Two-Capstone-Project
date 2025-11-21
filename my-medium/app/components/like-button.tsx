@@ -1,9 +1,9 @@
 'use client'
 
-
 import { useAuth } from '../lib/auth-context'
 import { useSocial } from '../lib/social-context'
 import { Button } from '../components/ui/button'
+import { useEffect } from 'react'
 
 interface LikeButtonProps {
   postId: string
@@ -11,32 +11,34 @@ interface LikeButtonProps {
 
 export function LikeButton({ postId }: LikeButtonProps) {
   const { user } = useAuth()
-  const { likePost, unlikePost, hasUserLikedPost, getLikeCount } = useSocial()
+  const { postLikes, likePost, loadPostLike } = useSocial()
 
-  const isLiked = user ? hasUserLikedPost(postId, user.id) : false
-  const likeCount = getLikeCount(postId)
+  useEffect(() => {
+    loadPostLike(postId)
+  }, [postId, loadPostLike])
 
-  const handleLike = () => {
+  const postLike = postLikes[postId] || { liked: false, count: 0 }
+
+  const handleLike = async () => {
     if (!user) {
       alert('Please sign in to like posts')
       return
     }
-
-    if (isLiked) {
-      unlikePost(postId, user.id)
-    } else {
-      likePost(postId, user.id)
+    try {
+      await likePost(postId)
+    } catch (error) {
+      console.error('Failed to like post:', error)
     }
   }
 
   return (
     <Button
-      variant={isLiked ? 'default' : 'outline'}
+      variant={postLike.liked ? 'default' : 'outline'}
       onClick={handleLike}
       className="gap-2"
     >
-      <span text-lg>👏</span>
-      <span>{likeCount > 0 ? likeCount : 'Like'}</span>
+      <span>👏</span>
+      <span>{postLike.count > 0 ? postLike.count : 'Like'}</span>
     </Button>
   )
 }
