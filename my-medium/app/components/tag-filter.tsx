@@ -3,6 +3,7 @@
 import { useSearch } from '../lib/search-context'
 import { usePosts } from '../lib/post-context'
 import { Button } from '../components/ui/button'
+import Link from 'next/link'
 
 interface TagFilterProps {
   className?: string
@@ -45,10 +46,11 @@ export function TagFilter({ className = '' }: TagFilterProps) {
               selectedTag === tag ? 'bg-primary' : 'hover:bg-accent'
             }`}
             onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-            aria-label={`Filter by ${tag} tag`}
-            aria-pressed={selectedTag === tag}
+            asChild
           >
-            {tag}
+            <Link href={`/tags/${tag}`}>
+              #{tag}
+            </Link>
           </Button>
         ))}
       </div>

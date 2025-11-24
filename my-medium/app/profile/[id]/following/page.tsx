@@ -3,7 +3,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { FollowButton } from '../../components/follow-button'
+import { FollowButton } from '../../../components/follow-button'
 
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'

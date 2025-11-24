@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Post from '@/lib/models/post'
+import User from '@/lib/models/user'
 import { authenticateRequest } from '@/lib/auth'
 import mongoose from 'mongoose'
 

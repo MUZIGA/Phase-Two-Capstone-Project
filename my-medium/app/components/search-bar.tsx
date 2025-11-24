@@ -2,20 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useSearch } from '../lib/search-context'
+import { useDebounce } from '../hooks/use-debounce'
 import { Button } from '../components/ui/button'
 
 export function SearchBar() {
   const { searchQuery, setSearchQuery } = useSearch()
   const [input, setInput] = useState(searchQuery)
 
- 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(input)
-    }, 300)
+  // Debounce the input value
+  const debouncedInput = useDebounce(input, 300)
 
-    return () => clearTimeout(timer)
-  }, [input, setSearchQuery])
+  useEffect(() => {
+    setSearchQuery(debouncedInput)
+  }, [debouncedInput, setSearchQuery])
 
   return (
     <div className="relative">

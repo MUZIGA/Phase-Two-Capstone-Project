@@ -35,31 +35,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, return a placeholder URL
-    // In production, upload to Cloudinary/S3 and return the actual URL
-    // Example Cloudinary integration:
-    /*
-    const cloudinary = require('cloudinary').v2
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
     
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { resource_type: 'image' },
-        (error: any, result: any) => {
-          if (error) reject(error)
-          else resolve(result)
-        }
-      ).end(buffer)
-    })
-    
-    return NextResponse.json({
-      success: true,
-      url: result.secure_url
-    })
-    */
 
-    // Placeholder response - replace with actual upload logic
+    
     const placeholderUrl = `https://via.placeholder.com/800x400?text=${encodeURIComponent(file.name)}`
 
     return NextResponse.json({

@@ -29,9 +29,13 @@ export function FeedCard({ post }: FeedCardProps) {
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {post.tags.slice(0, 3).map(tag => (
-              <span key={tag} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
-                {tag}
-              </span>
+              <Link
+                key={tag}
+                href={`/tags/${tag}`}
+                className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded hover:bg-muted/80 transition-colors"
+              >
+                #{tag}
+              </Link>
             ))}
           </div>
         )}

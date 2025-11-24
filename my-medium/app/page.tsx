@@ -15,10 +15,12 @@ import { usePagination } from './lib/../hooks/use-pagination'
 import { useSearch } from './lib/search-context'
 import { Button } from './components/ui/button'
 import { Card } from './components/ui/card'
+import { Post } from './lib/post-context'
 
 export default function Home() {
-  const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
-  const { posts = [], isLoading } = usePostsHook({ sortBy })
+  const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'recommended'>('latest')
+  const [viewMode, setViewMode] = useState<'pagination' | 'infinite'>('pagination')
+  const { posts = [], isLoading } = usePostsHook({ sortBy: sortBy === 'recommended' ? 'latest' : sortBy })
   const { searchQuery, selectedTag } = useSearch()
 
   const {
@@ -29,6 +31,12 @@ export default function Home() {
     hasPreviousPage,
     goToPage
   } = usePagination({ items: posts, itemsPerPage: 6 })
+
+  const sortedPosts = posts
+  const displayPosts = viewMode === 'pagination' ? currentItems : posts
+  const hasMore = false
+  const isLoadingMore = false
+  const isFetching = false
 
   const featuredPost = posts && posts.length > 0 ? posts[0] : null
 
@@ -61,6 +69,29 @@ export default function Home() {
                 <SearchBar />
               </div>
 
+              {/* View Mode Toggle */}
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-3">View Mode</h3>
+                <div className="space-y-2">
+                  <Button
+                    variant={viewMode === 'pagination' ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setViewMode('pagination')}
+                  >
+                    Pagination
+                  </Button>
+                  <Button
+                    variant={viewMode === 'infinite' ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => setViewMode('infinite')}
+                  >
+                    Infinite Scroll
+                  </Button>
+                </div>
+              </div>
+
               {/* Sort */}
               <div>
                 <h3 className="font-semibold text-gray-700 mb-3">Sort by</h3>
@@ -71,7 +102,7 @@ export default function Home() {
                     className="w-full justify-start"
                     onClick={() => {
                       setSortBy('latest')
-                      goToPage(1)
+                      if (viewMode === 'pagination') goToPage(1)
                     }}
                   >
                     Latest
@@ -82,15 +113,26 @@ export default function Home() {
                     className="w-full justify-start"
                     onClick={() => {
                       setSortBy('popular')
-                      goToPage(1)
+                      if (viewMode === 'pagination') goToPage(1)
                     }}
                   >
                     Most Popular
                   </Button>
+                  <Button
+                    variant={sortBy === 'recommended' ? 'default' : 'outline'}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setSortBy('recommended')
+                      if (viewMode === 'pagination') goToPage(1)
+                    }}
+                  >
+                    Recommended
+                  </Button>
                 </div>
               </div>
 
-              {/* Tag Filter */}
+            {/* Tag Filter */}
               <TagFilter />
             </div>
           </aside>
@@ -124,20 +166,19 @@ export default function Home() {
               </section>
             )}
 
-            
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {searchQuery ? 'Search Results' : selectedTag ? `Tagged: ${selectedTag}` : 'Latest Stories'}
                 </h2>
                 <span className="text-sm text-gray-500">
-                  {(posts?.length ?? 0)} post{(posts?.length ?? 0) !== 1 ? 's' : ''}
+                  {sortedPosts.length} post{sortedPosts.length !== 1 ? 's' : ''}
                 </span>
               </div>
 
               {isLoading ? (
                 <FeedSkeleton />
-              ) : (posts?.length ?? 0) === 0 ? (
+              ) : sortedPosts.length === 0 ? (
                 <Card className="p-12 text-center bg-white border border-gray-200">
                   <p className="text-gray-500 mb-4">
                     {searchQuery ? 'No posts found matching your search' : 'No posts yet'}
@@ -145,13 +186,14 @@ export default function Home() {
                 </Card>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {currentItems?.map(post => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {displayPosts.map((post: any) => (
                       <FeedCard key={post.id} post={post} />
                     ))}
                   </div>
 
-                  {totalPages > 1 && (
+                  {/* Pagination Controls */}
+                  {viewMode === 'pagination' && totalPages > 1 && (
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
@@ -159,6 +201,20 @@ export default function Home() {
                       hasNextPage={hasNextPage}
                       hasPreviousPage={hasPreviousPage}
                     />
+                  )}
+
+                  {/* Infinite Scroll Loading */}
+                  {viewMode === 'infinite' && (isLoadingMore || isFetching) && (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                    </div>
+                  )}
+
+                  {/* Infinite Scroll End Message */}
+                  {viewMode === 'infinite' && !hasMore && displayPosts.length > 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">You&apos;ve reached the end!</p>
+                    </div>
                   )}
                 </>
               )}

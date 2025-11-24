@@ -2,13 +2,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../lib/auth-context";
+import { useUserStats } from "../hooks/use-user-stats";
 export default function ProfilePage() {
   const { user } = useAuth();
+  const stats = useUserStats(user?.id || "");
   const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
     user?.id || ""
   );
-  const followingCount = 0;
-  const followersCount = 0;
   const isLoading = postsLoading || !user;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -46,17 +46,17 @@ export default function ProfilePage() {
                 <p className="text-slate-600">{user?.email}</p>
                 <div className="mt-4 flex items-center justify-center gap-6">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-slate-800">{posts.length}</p>
+                    <p className="text-2xl font-bold text-slate-800">{stats.totalPosts}</p>
                     <p className="text-sm text-slate-600">Posts</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-slate-800">{followersCount}</p>
+                  <Link href={`/profile/${user?.id}/followers`} className="text-center hover:bg-slate-100 rounded-lg p-2 transition-colors">
+                    <p className="text-2xl font-bold text-slate-800">{stats.followers}</p>
                     <p className="text-sm text-slate-600">Followers</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-slate-800">{followingCount}</p>
+                  </Link>
+                  <Link href={`/profile/${user?.id}/following`} className="text-center hover:bg-slate-100 rounded-lg p-2 transition-colors">
+                    <p className="text-2xl font-bold text-slate-800">{stats.following}</p>
                     <p className="text-sm text-slate-600">Following</p>
-                  </div>
+                  </Link>
                 </div>
               </div>
               <div className="space-y-6">
@@ -125,7 +125,7 @@ export default function ProfilePage() {
                       {post.image ? (
                         <div className="relative mb-4 h-32 w-full overflow-hidden rounded-lg">
                           <Image
-                            src={post.featuredImage}
+                            src={post.image}
                             alt={post.title}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -186,12 +186,4 @@ function usePostsByAuthor(authorId: string) {
   return { data, isLoading };
 }
 
-function followingCount(authorId: string) {
-  // Placeholder for following count
-  return { data: 0 };
-}
 
-function followersCount(authorId: string) {
-  // Placeholder for followers count
-  return { data: 0 };
-}
