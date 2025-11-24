@@ -13,7 +13,7 @@ import Link from "next/link";
 
 export default function WritePage() {
   const { user } = useAuth();
-  const { createDraft, updateDraft, publishPost, getDraftById } = usePosts();
+  const { createDraft, updateDraft, publishPost, getDraftById, refreshPosts } = usePosts();
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draft");
@@ -125,8 +125,9 @@ export default function WritePage() {
       }
 
       await publishPost(draftId, tagArray, image);
+      await refreshPosts();
       alert("Post published successfully!");
-      router.push("/dashboard");
+      router.push("/explore");
     } catch (error) {
       console.error("Failed to publish post:", error);
       alert("Failed to publish post. Please try again.");

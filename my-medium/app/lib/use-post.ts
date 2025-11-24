@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { usePosts } from "../lib/post-context";
+import { usePosts } from "../lib/post-context"
 import { useSearch } from "../lib/search-context";
 import { useSocial } from "../lib/social-context";
 import { Post } from "../lib/post-context";

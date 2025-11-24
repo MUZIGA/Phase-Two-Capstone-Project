@@ -1,21 +1,36 @@
-import mongoose from 'mongoose';
+// app/lib/db.ts
+import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI as string
 
 if (!MONGODB_URI) {
-  throw new Error("Please add your MongoDB URI to .env file");
+  throw new Error('Please add your MongoDB URI to .env file')
+}
+
+/**
+ * Global cached connection for Next.js hot reload in development
+ */
+let cached = (global as any).mongoose
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null }
 }
 
 export async function connectToDatabase() {
-  if (mongoose.connection.readyState >= 1) {
-    return;
+  if (cached.conn) {
+    return cached.conn
   }
 
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    throw new Error("Failed to connect to MongoDB");
+  if (!cached.promise) {
+    cached.promise = mongoose
+      .connect(MONGODB_URI)
+      .then(mongoose => mongoose)
+      .catch(err => {
+        cached.promise = null
+        throw err
+      })
   }
+
+  cached.conn = await cached.promise
+  return cached.conn
 }

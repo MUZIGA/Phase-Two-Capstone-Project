@@ -3,10 +3,51 @@ import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
 import { authenticateRequest } from '@/lib/auth'
+import mongoose from 'mongoose'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params
+
+    await connectToDatabase()
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+    }
+
+    const target = await User.findById(id)
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Try to authenticate to compute "following" relative to current user
+    let following = false
+    const auth = await authenticateRequest(request)
+    if (auth && mongoose.Types.ObjectId.isValid(auth.userId)) {
+      const current = await User.findById(auth.userId)
+      if (current) {
+        following = current.following.some((f: any) => f.toString() === id)
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      following,
+      followersCount: target.followers.length,
+      followingCount: target.following.length,
+    })
+  } catch (error) {
+    console.error('[GET_FOLLOW_STATUS_ERROR]', error)
+    return NextResponse.json({ error: 'Failed to get follow status' }, { status: 500 })
+  }
+}
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const auth = await authenticateRequest(request)
@@ -14,8 +55,12 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { id } = params
     const currentUserId = auth.userId
+
+    if (!mongoose.Types.ObjectId.isValid(id) || !mongoose.Types.ObjectId.isValid(currentUserId)) {
+      return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
+    }
 
     if (id === currentUserId) {
       return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
@@ -23,8 +68,10 @@ export async function POST(
 
     await connectToDatabase()
 
-    const userToFollow = await User.findById(id)
-    const currentUser = await User.findById(currentUserId)
+    const [userToFollow, currentUser] = await Promise.all([
+      User.findById(id),
+      User.findById(currentUserId),
+    ])
 
     if (!userToFollow || !currentUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })

@@ -32,9 +32,18 @@ const API_HEADERS = {
 }
 
 async function handleApiResponse(response: Response) {
-  const data = await response.json().catch(() => ({}))
+  let data: any = {}
+  try {
+    data = await response.json()
+  } catch {
+    data = {}
+  }
   if (!response.ok) {
-    const message = data?.error || 'Something went wrong. Please try again.'
+    const serverMessage =
+      typeof data?.error === 'string' ? data.error :
+      typeof data?.message === 'string' ? data.message :
+      response.statusText || 'Request failed'
+    const message = `${serverMessage} (${response.status})`
     throw new Error(message)
   }
   return data
