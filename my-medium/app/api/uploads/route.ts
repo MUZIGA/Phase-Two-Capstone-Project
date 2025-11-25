@@ -1,53 +1,56 @@
-import { NextResponse } from 'next/server'
-import { NextRequest } from 'next/server'
-import { authenticateRequest } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/db";
+import Post from "@/lib/models/post";
+import { authenticateRequest } from "@/lib/auth";
+import mongoose from "mongoose";
 
-
-export async function POST(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const auth = await authenticateRequest(request)
-    if (!auth) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await authenticateRequest(request);
+    if (!auth)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const id = params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }
 
-    const formData = await request.formData()
-    const file = formData.get('file') as File
+    const updates = await request.json();
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    }
+    await connectToDatabase();
 
-    
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Only images are allowed.' },
-        { status: 400 }
-      )
-    }
+    updates.updatedAt = new Date();
 
-    
-    const maxSize = 5 * 1024 * 1024 
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File size exceeds 5MB limit' },
-        { status: 400 }
-      )
-    }
+    const updated = await Post.findByIdAndUpdate(id, updates, { new: true })
+      .populate("author", "name email avatar")
+      .lean();
 
-    
-
-    
-    const placeholderUrl = `https://via.placeholder.com/800x400?text=${encodeURIComponent(file.name)}`
+    if (!updated)
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
 
     return NextResponse.json({
       success: true,
-      url: placeholderUrl,
-      message: 'Image upload endpoint ready. Configure Cloudinary/S3 for production.',
-    })
+      data: {
+        id: updated._id.toString(),
+        title: updated.title,
+        content: updated.content,
+        excerpt: updated.excerpt,
+        author: updated.author?.name,
+        authorId: updated.author?._id.toString(),
+        tags: updated.tags,
+        published: updated.published,
+        slug: updated.slug,
+        image: updated.image,
+        views: updated.views,
+        likes: updated.likes?.length || 0,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      },
+    });
   } catch (error) {
-    console.error('[UPLOAD_ERROR]', error)
-    return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+    return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
   }
 }
-
