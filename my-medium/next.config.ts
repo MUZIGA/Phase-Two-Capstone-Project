@@ -3,9 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
-  // Enable Turbopack explicitly (Next.js 16 default)
-  turbopack: {},
-
+  // Performance optimizations
+  compress: true,
+  poweredByHeader: false,
+  
   // Image optimization
   images: {
     remotePatterns: [
@@ -14,12 +15,38 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 31536000,
+  },
+
+  // Headers for security and performance
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ]
   },
 
   // Experimental features
   experimental: {
-    optimizePackageImports: ['lucide-react'],
-    // Pin Turbopack root to this app to silence multi-lockfile warning
+    optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
     turbopack: {
       root: __dirname,
     },

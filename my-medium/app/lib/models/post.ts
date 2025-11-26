@@ -57,6 +57,14 @@ const PostSchema = new Schema<PostDocument>(
       type: Schema.Types.ObjectId,
       ref: 'User',
     }],
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

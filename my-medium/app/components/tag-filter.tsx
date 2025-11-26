@@ -1,58 +1,42 @@
 'use client'
 
-import { useSearch } from '../lib/search-context'
-import { usePosts } from '../lib/post-context'
-import { Button } from '../components/ui/button'
-import Link from 'next/link'
+import { Button } from './ui/button'
 
 interface TagFilterProps {
-  className?: string
+  tags: string[]
+  selectedTag: string | null
+  onTagSelect: (tag: string | null) => void
 }
 
-export function TagFilter({ className = '' }: TagFilterProps) {
-  const { selectedTag, setSelectedTag, getAllTags } = useSearch()
-  const { posts } = usePosts()
-
-  const tags = getAllTags(posts)
-
-  if (tags.length === 0) {
-    return null
-  }
+export function TagFilter({ tags, selectedTag, onTagSelect }: TagFilterProps) {
+  if (!tags || tags.length === 0) return null
 
   return (
-    <div className={`space-y-3 ${className}`.trim()}>
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-foreground">Tags</h3>
-        {selectedTag && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setSelectedTag(null)}
-            className="text-xs hover:bg-transparent"
-            aria-label="Clear tag filter"
-          >
-            Clear
-          </Button>
-        )}
-      </div>
-
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-foreground">Filter by tag:</h3>
       <div className="flex flex-wrap gap-2">
-        {tags.map(tag => (
+        <Button
+          variant={selectedTag === null ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onTagSelect(null)}
+        >
+          All
+        </Button>
+        {tags.slice(0, 10).map(tag => (
           <Button
             key={tag}
             variant={selectedTag === tag ? 'default' : 'outline'}
             size="sm"
-            className={`transition-colors ${
-              selectedTag === tag ? 'bg-primary' : 'hover:bg-accent'
-            }`}
-            onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-            asChild
+            onClick={() => onTagSelect(tag)}
           >
-            <Link href={`/tags/${tag}`}>
-              #{tag}
-            </Link>
+            #{tag}
           </Button>
         ))}
+        {tags.length > 10 && (
+          <span className="text-sm text-muted-foreground self-center">
+            +{tags.length - 10} more
+          </span>
+        )}
       </div>
     </div>
   )

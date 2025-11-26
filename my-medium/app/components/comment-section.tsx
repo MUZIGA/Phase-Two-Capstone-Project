@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { useSocial } from '../lib/social-context'
 import { Button } from '../components/ui/button'
@@ -12,9 +12,14 @@ interface CommentSectionProps {
 
 export function CommentSection({ postId }: CommentSectionProps) {
   const { user } = useAuth()
-  const { comments, addComment, deleteComment, getCommentsByPost, likeComment } = useSocial()
+  const { comments, addComment, deleteComment, getCommentsByPost, likeComment, loadComments } = useSocial()
   const [commentText, setCommentText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Validate postId
+  if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
+    return <div>Invalid post ID</div>
+  }
 
   const postComments = getCommentsByPost(postId)
 

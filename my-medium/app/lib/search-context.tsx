@@ -1,54 +1,65 @@
 'use client'
 
-import React, { createContext, useState, ReactNode } from 'react'
-import { Post } from '../types'
+import React, { createContext, useState, useCallback, useEffect } from 'react'
+import { Post } from './post-context'
+import { useDebounce } from '../hooks/use-debounce'
 
 interface SearchContextType {
   searchQuery: string
-  selectedTag: string | null
+  searchResults: Post[]
+  isSearching: boolean
   setSearchQuery: (query: string) => void
-  setSelectedTag: (tag: string | null) => void
-  filterPosts: (posts: Post[]) => Post[]
-  getAllTags: (posts: Post[]) => string[]
+  clearSearch: () => void
 }
 
 export const SearchContext = createContext<SearchContextType | undefined>(undefined)
 
-export function SearchProvider({ children }: { children: ReactNode }) {
+export function SearchProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [searchResults, setSearchResults] = useState<Post[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
-  
-  const filterPosts = (posts: Post[]): Post[] => {
-    return posts.filter(post => {
-      const matchesSearch = !searchQuery || 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.author.toLowerCase().includes(searchQuery.toLowerCase())
-      
-      const matchesTag = !selectedTag || post.tags.includes(selectedTag)
-      
-      return matchesSearch && matchesTag
-    })
-  }
+  const debouncedQuery = useDebounce(searchQuery, 300)
 
-  
-  const getAllTags = (posts: Post[]): string[] => {
-    const tagSet = new Set<string>()
-    posts.forEach(post => {
-      post.tags.forEach(tag => tagSet.add(tag))
-    })
-    return Array.from(tagSet).sort()
-  }
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSearchResults(data.data || [])
+      }
+    } catch (error) {
+      console.error('Search failed:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    performSearch(debouncedQuery)
+  }, [debouncedQuery, performSearch])
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('')
+    setSearchResults([])
+    setIsSearching(false)
+  }, [])
 
   return (
     <SearchContext.Provider value={{
       searchQuery,
-      selectedTag,
+      searchResults,
+      isSearching,
       setSearchQuery,
-      setSelectedTag,
-      filterPosts,
-      getAllTags
+      clearSearch
     }}>
       {children}
     </SearchContext.Provider>
@@ -57,7 +68,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 
 export function useSearch() {
   const context = React.useContext(SearchContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSearch must be used within SearchProvider')
   }
   return context

@@ -1,65 +1,57 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-
+import { Button } from '@/components/ui/button'
+import { FollowButton } from '@/components/follow-button'
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
 
-type FollowersPageProps = {
-  params: Promise<{
-    id: string
-  }>
+interface FollowersPageProps {
+  params: Promise<{ id: string }>
 }
 
 export default async function FollowersPage({ params }: FollowersPageProps) {
   const { id } = await params
 
   await connectToDatabase()
-  const user = await User.findById(id).populate('followers', 'name email').lean()
-
+  const user = await User.findById(id).lean()
+  
   if (!user) {
     notFound()
   }
 
-  const followers = user.followers || []
+  const followers = await User.find({ following: id })
+    .select('name email createdAt')
+    .lean()
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-        <div className="mb-6">
-          <Link
-            href={`/profile/${id}`}
-            className="text-indigo-600 hover:text-indigo-800 transition-colors"
-          >
+    <div className="min-h-screen bg-white py-12">
+      <div className="max-w-2xl mx-auto px-6">
+        <div className="mb-8">
+          <Link href={`/profile/${id}`} className="text-gray-600 hover:text-gray-900 mb-4 inline-block">
             ← Back to Profile
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 mt-4">
-            {user.name}'s Followers ({followers.length})
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">Followers</h1>
+          <p className="text-gray-600">{user.name}'s followers</p>
         </div>
 
         {followers.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-600">No followers yet.</p>
+            <p className="text-gray-500">No followers yet.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {followers.map((follower: any) => (
-              <div key={follower._id} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold">
+            {followers.map((follower) => (
+              <div key={follower._id.toString()} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <Link href={`/profile/${follower._id}`} className="flex items-center space-x-3 flex-1">
+                  <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center text-white font-semibold">
                     {follower.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-900">{follower.name}</h3>
-                    <p className="text-slate-600">{follower.email}</p>
+                    <h3 className="font-semibold text-gray-900">{follower.name}</h3>
+                    <p className="text-sm text-gray-600">{follower.email}</p>
                   </div>
-                </div>
-                <Link
-                  href={`/profile/${follower._id}`}
-                  className="text-indigo-600 hover:text-indigo-800 transition-colors"
-                >
-                  View Profile
                 </Link>
+                <FollowButton userId={follower._id.toString()} variant="outline" />
               </div>
             ))}
           </div>

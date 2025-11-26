@@ -2,29 +2,11 @@
 'use client'
 
 import React, { createContext, useState, ReactNode, useEffect, useCallback } from 'react'
+import type { Post, ApiResponse } from './types'
 
-export interface Post {
-  id: string
-  title: string
-  content: string
-  excerpt: string
-  author: string
-  authorId: string
-  tags: string[]
-  published: boolean
-  createdAt: Date | string
-  updatedAt: Date | string
-  slug: string
-  image?: string
-  views?: number
-  likes?: number
-}
+export type { Post }
 
 export type Draft = Post
-
-interface ErrorResponse {
-  error?: string
-}
 
 interface PostContextType {
   posts: Post[]
@@ -131,6 +113,10 @@ export function PostProvider({ children }: { children: ReactNode }) {
         return
       }
       const user = JSON.parse(storedUser)
+      if (!user.id || typeof user.id !== 'string' || user.id.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(user.id)) {
+        setDrafts([])
+        return
+      }
       const response = await fetch(`/api/post?authorId=${encodeURIComponent(user.id)}&published=false`, {
         headers: getAuthHeaders(),
       })
@@ -145,8 +131,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
         setDrafts([])
       }
     } catch (err) {
-      console.error('fetchDrafts error', err)
-      setError('Failed to fetch drafts')
+      // Silently fail for invalid draft requests
       setDrafts([])
     }
   }, [getAuthHeaders])
@@ -164,30 +149,26 @@ export function PostProvider({ children }: { children: ReactNode }) {
         const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
         if (!token) throw new Error('You must be logged in to save drafts.')
 
-        const body = {
-          title,
-          content,
-          excerpt: content.replace(/<[^>]*>/g, '').substring(0, 150),
-          published: false,
-          tags: [],
-          authorId,
-          author,
-        }
-
         const response = await fetch('/api/post', {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            title: title.trim(),
+            content,
+            excerpt: content.replace(/<[^>]*>/g, '').substring(0, 200).trim(),
+            published: false,
+            tags: [],
+          }),
         })
 
         if (!response.ok) {
-          const errData = await parseJsonSafe<ErrorResponse>(response)
+          const errData = await parseJsonSafe<ApiResponse>(response)
           throw new Error(errData?.error || `Failed to create draft: ${response.status}`)
         }
 
-        const data = await parseJsonSafe<{ success?: boolean; data?: any }>(response)
+        const data = await parseJsonSafe<ApiResponse<Post>>(response)
         if (data?.success && data.data) {
-          const newDraft = { ...normalizeServerPost(data.data), author, authorId }
+          const newDraft = normalizeServerPost(data.data)
           setDrafts(prev => [newDraft, ...prev])
           return newDraft.id
         }
@@ -196,25 +177,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
       } catch (err: any) {
         console.error('createDraft error', err)
         setError(err?.message ?? 'Failed to create draft')
-        const id = '0.' + Math.random().toString().slice(2)
-        const now = new Date()
-        const newDraft: Post = {
-          id,
-          title,
-          content,
-          excerpt: content.replace(/<[^>]*>/g, '').substring(0, 150),
-          author,
-          authorId,
-          tags: [],
-          published: false,
-          createdAt: now,
-          updatedAt: now,
-          slug: title.toLowerCase().replace(/\s+/g, '-'),
-          views: 0,
-          likes: 0,
-        }
-        setDrafts(prev => [newDraft, ...prev])
-        return id
+        throw err
       }
     },
     [getAuthHeaders]
@@ -230,7 +193,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(updates),
         })
         if (response.ok) {
-          const data = await parseJsonSafe<{ success?: boolean; data?: any }>(response)
+          const data = await parseJsonSafe<ApiResponse<Post>>(response)
           if (data?.success && data.data) {
             setDrafts(prev =>
               prev.map(d => (d.id === id ? { ...normalizeServerPost(data.data), author: d.author, authorId: d.authorId } : d))
@@ -254,65 +217,63 @@ export function PostProvider({ children }: { children: ReactNode }) {
         const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
         if (!token) throw new Error('You must be logged in to publish posts.')
 
-        let id = draftId
-
-        // Automatic save if draft id is temporary (starts with 0.)
-        if (!id || id.startsWith('0.')) {
-          const tempDraft = drafts.find(d => d.id === id)
-          if (!tempDraft) throw new Error('Draft not found to publish')
-
-          const body = {
-            title: tempDraft.title,
-            content: tempDraft.content,
-            excerpt: tempDraft.excerpt,
-            tags,
-            image,
-            published: true,
-          }
-
-          const saveResp = await fetch('/api/post', {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify(body),
-          })
-
-          const savedData = await parseJsonSafe<{ success?: boolean; data?: any; error?: string }>(saveResp)
-          if (!saveResp.ok || !savedData?.success || !savedData.data) {
-            throw new Error(savedData?.error || 'Failed to save draft before publishing')
-          }
-
-          id = savedData.data.id
+        // Validate ObjectId format
+        if (!/^[0-9a-fA-F]{24}$/.test(draftId)) {
+          throw new Error('Invalid draft ID format')
         }
 
-        const response = await fetch(`/api/post/${encodeURIComponent(id)}`, {
+        const response = await fetch(`/api/post/${draftId}`, {
           method: 'PUT',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ published: true, tags, image }),
+          body: JSON.stringify({ 
+            published: true, 
+            tags: Array.isArray(tags) ? tags.filter(Boolean) : [],
+            image: image || null
+          }),
         })
 
-        const data = await parseJsonSafe<{ success?: boolean; data?: any; error?: string }>(response)
+        const data = await parseJsonSafe<ApiResponse<Post>>(response)
+        
         if (!response.ok) {
-          throw new Error(data?.error || `Failed to publish post: ${response.status} ${response.statusText}`)
+          throw new Error(data?.error || `Failed to publish: ${response.status}`)
         }
-        if (!(data?.success && data?.data)) throw new Error('Invalid response from server while publishing.')
+        
+        if (!data?.success || !data?.data) {
+          throw new Error('Invalid response from server')
+        }
 
         const normalized = normalizeServerPost(data.data)
         setPosts(prev => [normalized, ...prev])
         setDrafts(prev => prev.filter(d => d.id !== draftId))
       } catch (err: any) {
         console.error('publishPost error', err)
-        setError(err?.message || 'Failed to publish post')
+        const errorMessage = err?.message || 'Failed to publish post'
+        setError(errorMessage)
         throw err
       }
     },
-    [getAuthHeaders, drafts]
+    [getAuthHeaders]
   )
 
   const updatePost = useCallback((id: string, updates: Partial<Post>) => {
     setPosts(prev => prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date() } : p)))
   }, [])
 
-  const deletePost = useCallback((id: string) => setPosts(prev => prev.filter(p => p.id !== id)), [])
+  const deletePost = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/post/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      if (response.ok) {
+        setPosts(prev => prev.filter(p => p.id !== id))
+        setDrafts(prev => prev.filter(d => d.id !== id))
+      }
+    } catch (error) {
+      console.error('Failed to delete post:', error)
+      setError('Failed to delete post')
+    }
+  }, [getAuthHeaders])
   const deleteDraft = useCallback((id: string) => setDrafts(prev => prev.filter(d => d.id !== id)), [])
   const getDraftById = useCallback((id: string) => drafts.find(d => d.id === id), [drafts])
   const getPostById = useCallback((id: string) => posts.find(p => p.id === id), [posts])

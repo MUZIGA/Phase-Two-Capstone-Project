@@ -1,56 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
-import Post from "@/lib/models/post";
 import { authenticateRequest } from "@/lib/auth";
-import mongoose from "mongoose";
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Simple file upload handler
+export async function POST(request: NextRequest) {
   try {
     const auth = await authenticateRequest(request);
-    if (!auth)
+    if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const id = params.id;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
     }
 
-    const updates = await request.json();
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
 
-    await connectToDatabase();
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
 
-    updates.updatedAt = new Date();
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large" }, { status: 400 });
+    }
 
-    const updated = await Post.findByIdAndUpdate(id, updates, { new: true })
-      .populate("author", "name email avatar")
-      .lean();
-
-    if (!updated)
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    // Convert to base64 for simple storage
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     return NextResponse.json({
       success: true,
       data: {
-        id: updated._id.toString(),
-        title: updated.title,
-        content: updated.content,
-        excerpt: updated.excerpt,
-        author: updated.author?.name,
-        authorId: updated.author?._id.toString(),
-        tags: updated.tags,
-        published: updated.published,
-        slug: updated.slug,
-        image: updated.image,
-        views: updated.views,
-        likes: updated.likes?.length || 0,
-        createdAt: updated.createdAt,
-        updatedAt: updated.updatedAt,
-      },
+        url: dataUrl,
+        filename: file.name,
+        size: file.size,
+        type: file.type
+      }
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
+  } catch (error: any) {
+    console.error('[UPLOAD_ERROR]', error);
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }

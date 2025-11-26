@@ -4,17 +4,20 @@ import { Card } from '../components/ui/card'
 import { SearchBar } from '../components/search-bar'
 import { TagFilter } from '../components/tag-filter'
 import { FeedCard } from '../components/feedCard'
+import { PersonalizedFeed } from '../components/personalized-feed'
 import { useSearch } from '../lib/search-context'
-import { usePosts } from '../lib/post-context'
+import { usePosts } from '../hooks/use-posts'
+import { useAuth } from '../lib/auth-context'
+import { Button } from '../components/ui/button'
 import { useState } from 'react'
 
 export default function ExplorePage() {
-  const { posts } = usePosts()
-  const { filterPosts } = useSearch()
+  const { data: posts = [], isLoading, error } = usePosts()
+  const { user } = useAuth()
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
+  const [feedType, setFeedType] = useState<'explore' | 'following'>('explore')
 
-  const filteredPosts = filterPosts(posts)
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
+  const sortedPosts = [...posts].sort((a, b) => {
     if (sortBy === 'popular') {
       return (b.views || 0) - (a.views || 0)
     }
@@ -24,8 +27,29 @@ export default function ExplorePage() {
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold mb-2 text-foreground">Explore</h1>
-        <p className="text-muted-foreground mb-8">Discover amazing stories and insights</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 text-foreground">Explore</h1>
+            <p className="text-muted-foreground">Discover amazing stories and insights</p>
+          </div>
+          
+          {user && (
+            <div className="flex gap-2">
+              <Button
+                variant={feedType === 'explore' ? 'default' : 'outline'}
+                onClick={() => setFeedType('explore')}
+              >
+                Explore
+              </Button>
+              <Button
+                variant={feedType === 'following' ? 'default' : 'outline'}
+                onClick={() => setFeedType('following')}
+              >
+                Following
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
@@ -62,13 +86,29 @@ export default function ExplorePage() {
                 </div>
               </div>
 
-              <TagFilter />
+
             </div>
           </aside>
 
           
           <div className="lg:col-span-3">
-            {sortedPosts.length === 0 ? (
+            {feedType === 'following' ? (
+              <PersonalizedFeed />
+            ) : isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="p-6 animate-pulse">
+                    <div className="h-40 bg-muted rounded mb-4"></div>
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <Card className="p-12 text-center text-destructive">
+                <p>Failed to load posts. Please try again.</p>
+              </Card>
+            ) : sortedPosts.length === 0 ? (
               <Card className="p-12 text-center text-muted-foreground">
                 <p>No posts found. Try adjusting your filters.</p>
               </Card>

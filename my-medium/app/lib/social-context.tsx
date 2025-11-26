@@ -20,7 +20,7 @@ interface PostLike {
 interface SocialContextType {
   comments: { [postId: string]: Comment[] }
   loadComments: (postId: string) => Promise<void>
-  addComment: (postId: string, content: string, authorId: string, authorName: string) => Promise<void>
+  addComment: (postId: string, content: string, authorId: string, authorName: string, parentId?: string) => Promise<void>
   deleteComment: (commentId: string) => Promise<void>
   getCommentsByPost: (postId: string) => Comment[]
   likeComment: (commentId: string, userId: string) => Promise<void>
@@ -36,15 +36,32 @@ interface SocialContextType {
 
 export const SocialContext = createContext<SocialContextType | undefined>(undefined)
 
-const API_HEADERS = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('auth_token') : ''}`,
+function getApiHeaders() {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+  }
+  
+  return headers
 }
 
 async function handleApiResponse(response: Response) {
-  const data = await response.json().catch(() => ({}))
+  const text = await response.text()
+  let data = {}
+  try {
+    data = JSON.parse(text)
+  } catch {
+    // Silent fail for non-JSON responses
+  }
+  
   if (!response.ok) {
-    const message = data?.error || 'Something went wrong. Please try again.'
+    const message = data?.error || response.statusText || 'Something went wrong. Please try again.'
     throw new Error(message)
   }
   return data
@@ -57,30 +74,50 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   // ===== COMMENTS =====
   const loadComments = async (postId: string) => {
+    if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
+      return
+    }
     try {
       const response = await fetch(`/api/post/${postId}/comments`)
-      const data = await handleApiResponse(response)
-      setComments(prev => ({
-        ...prev,
-        [postId]: data.data || []
-      }))
+      if (response.ok) {
+        const data = await response.json()
+        const commentsData = data.data || []
+        // Transform API response to match component expectations
+        const transformedComments = commentsData.map((comment: any) => ({
+          id: comment.id,
+          postId: comment.postId,
+          author: comment.author,
+          authorId: comment.authorId,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          likes: Array.isArray(comment.likes) ? comment.likes : [],
+          parentId: comment.parentId
+        }))
+        setComments(prev => ({
+          ...prev,
+          [postId]: transformedComments
+        }))
+      }
     } catch (error) {
-      console.error('Failed to load comments:', error)
+      // Silently fail for invalid comment requests
     }
   }
 
-  const addComment = async (postId: string, content: string, authorId: string, authorName: string) => {
+  const addComment = async (postId: string, content: string, authorId: string, authorName: string, parentId?: string) => {
+    if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
+      return
+    }
     try {
-      const response = await fetch(`/api/comment`, {
+      const response = await fetch(`/api/post/${postId}/comments`, {
         method: 'POST',
-        headers: API_HEADERS,
-        body: JSON.stringify({ postId, content, authorId, authorName }),
+        headers: getApiHeaders(),
+        body: JSON.stringify({ content, parentId }),
       })
-      const data = await handleApiResponse(response)
-      await loadComments(postId) // Reload comments
+      if (response.ok) {
+        await loadComments(postId)
+      }
     } catch (error) {
-      console.error('Failed to add comment:', error)
-      throw error
+      // Silently fail for invalid comment requests
     }
   }
 
@@ -88,7 +125,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`/api/comment/${commentId}`, {
         method: 'DELETE',
-        headers: API_HEADERS,
+        headers: getApiHeaders(),
       })
       await handleApiResponse(response)
       // Reload comments for all posts (simplified)
@@ -107,7 +144,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`/api/comment/${commentId}/like`, {
         method: 'POST',
-        headers: API_HEADERS,
+        headers: getApiHeaders(),
         body: JSON.stringify({ userId }),
       })
       await handleApiResponse(response)
@@ -121,6 +158,9 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   // ===== POST LIKES =====
   const loadPostLike = async (postId: string) => {
+    if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
+      return
+    }
     try {
       const response = await fetch(`/api/post/${postId}/clap`)
       const data = await handleApiResponse(response)
@@ -129,29 +169,46 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         [postId]: { liked: data.liked, count: data.likesCount }
       }))
     } catch (error) {
-      console.error('Failed to load post like:', error)
+      // Silently fail for invalid post like requests
     }
   }
 
   const likePost = async (postId: string) => {
+    if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
+      return
+    }
+    
+    const currentLike = postLikes[postId] || { liked: false, count: 0 }
+    
     try {
       const response = await fetch(`/api/post/${postId}/clap`, {
         method: 'POST',
-        headers: API_HEADERS,
+        headers: getApiHeaders(),
       })
-      const data = await handleApiResponse(response)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPostLikes(prev => ({
+          ...prev,
+          [postId]: { liked: data.data.liked, count: data.data.likesCount }
+        }))
+      } else {
+        throw new Error('Failed to like post')
+      }
+    } catch (error) {
       setPostLikes(prev => ({
         ...prev,
-        [postId]: { liked: data.data.liked, count: data.data.likesCount }
+        [postId]: currentLike
       }))
-    } catch (error) {
-      console.error('Failed to like post:', error)
       throw error
     }
   }
 
   // ===== FOLLOWS =====
   const loadFollow = async (userId: string) => {
+    if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
+      return
+    }
     try {
       const response = await fetch(`/api/users/${userId}/follow`)
       const data = await handleApiResponse(response)
@@ -164,15 +221,18 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         }
       }))
     } catch (error) {
-      console.error('Failed to load follow status:', error)
+      // Silently fail for invalid follow requests
     }
   }
 
   const followUser = async (userId: string) => {
+    if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
+      return
+    }
     try {
       const response = await fetch(`/api/users/${userId}/follow`, {
         method: 'POST',
-        headers: API_HEADERS,
+        headers: getApiHeaders(),
       })
       const data = await handleApiResponse(response)
       setFollows(prev => ({

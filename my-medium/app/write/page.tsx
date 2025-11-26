@@ -64,7 +64,6 @@ export default function WritePage() {
       return;
     }
 
-    // Check if token exists
     const token = localStorage.getItem('auth_token');
     if (!token) {
       alert("Your session has expired. Please log in again.");
@@ -81,9 +80,6 @@ export default function WritePage() {
       } else {
         const newDraftId = await createDraft(title, content, user.id, user.name);
         setCurrentDraftId(newDraftId);
-        if (tagArray.length > 0 || image) {
-          await updateDraft(newDraftId, { tags: tagArray, image });
-        }
         alert("Draft saved!");
       }
     } catch (error: any) {
@@ -114,23 +110,34 @@ export default function WritePage() {
     try {
       const tagArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
       
-      // If no draft exists, create one first
-      let draftId = currentDraftId;
-      if (!draftId) {
-        draftId = await createDraft(title, content, user.id, user.name);
-        setCurrentDraftId(draftId);
-        if (tagArray.length > 0 || image) {
-          await updateDraft(draftId, { tags: tagArray, image });
-        }
+      // Create new post directly as published
+      const response = await fetch('/api/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          content,
+          excerpt,
+          tags: tagArray,
+          image,
+          published: true
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to publish post');
       }
 
-      await publishPost(draftId, tagArray, image);
       await refreshPosts();
       alert("Post published successfully!");
       router.push("/explore");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to publish post:", error);
-      alert("Failed to publish post. Please try again.");
+      alert(error.message || "Failed to publish post. Please try again.");
     } finally {
       setIsPublishing(false);
     }

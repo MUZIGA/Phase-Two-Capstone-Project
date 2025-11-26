@@ -82,7 +82,7 @@ export async function POST(
     )
 
     if (isFollowing) {
-      // Unfollow
+      
       currentUser.following = currentUser.following.filter(
         (followId: any) => followId.toString() !== id
       )
@@ -90,7 +90,7 @@ export async function POST(
         (followerId: any) => followerId.toString() !== currentUserId
       )
     } else {
-      // Follow
+      
       currentUser.following.push(id as any)
       userToFollow.followers.push(currentUserId as any)
     }

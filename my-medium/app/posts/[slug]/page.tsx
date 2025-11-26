@@ -1,59 +1,113 @@
-"use client";
-
+import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { Button } from "../../components/ui/button"
-import { usePosts } from "../../lib/post-context"
-import { useAuth } from "../../lib/auth-context"
-import { CommentSection } from "../../components/comment-section"
-import { LikeButton } from "../../components/like-button"
-import { FollowButton } from "../../components/follow-button"
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { OptimizedImage } from "../../components/optimized-image"
+import { JsonLd } from "../../components/json-ld"
+import { ClientInteractions } from "./client-interactions"
+import Link from "next/link"
+import type { Post } from '@/lib/types'
 
 interface PostPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string }>
 }
 
-export default function PostPage({ params }: PostPageProps) {
-  const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
-    null
-  );
+async function getPost(slug: string): Promise<Post | null> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post?slug=${slug}`, {
+      next: { revalidate: 3600 }
+    })
+    if (!response.ok) return null
+    const data = await response.json()
+    return data.success && data.data?.length > 0 ? data.data[0] : null
+  } catch {
+    return null
+  }
+}
 
-  const { getPostBySlug } = usePosts();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    params.then(setResolvedParams);
-  }, [params]);
-
-  if (!resolvedParams) return <div>Loading...</div>;
-
-  const post = getPostBySlug(resolvedParams.slug);
-  const isAuthor = user?.id === post?.authorId;
-
+export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getPost(slug)
+  
   if (!post) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-4">
-            Post not found
-          </h1>
-          <Button asChild>
-            <Link href="/">Back to Home</Link>
-          </Button>
-        </div>
-      </main>
-    );
+    return {
+      title: 'Post Not Found',
+      description: 'The requested post could not be found.'
+    }
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  const postUrl = `${baseUrl}/posts/${post.slug}`
+  
+  return {
+    title: `${post.title} | WriteHub`,
+    description: post.excerpt || post.content.replace(/<[^>]*>/g, '').substring(0, 160),
+    keywords: post.tags.join(', '),
+    authors: [{ name: post.author }],
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || post.content.replace(/<[^>]*>/g, '').substring(0, 160),
+      url: postUrl,
+      siteName: 'WriteHub',
+      images: post.image ? [{
+        url: post.image,
+        width: 1200,
+        height: 630,
+        alt: post.title
+      }] : [],
+      locale: 'en_US',
+      type: 'article',
+      publishedTime: new Date(post.createdAt).toISOString(),
+      modifiedTime: new Date(post.updatedAt).toISOString(),
+      authors: [post.author],
+      tags: post.tags
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt || post.content.replace(/<[^>]*>/g, '').substring(0, 160),
+      images: post.image ? [post.image] : [],
+      creator: `@${post.author.replace(/\s+/g, '').toLowerCase()}`
+    },
+    alternates: {
+      canonical: postUrl
+    }
+  }
+}
+
+export async function generateStaticParams() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post?published=true&limit=100`)
+    if (!response.ok) return []
+    const data = await response.json()
+    return data.success ? data.data.map((post: Post) => ({ slug: post.slug })) : []
+  } catch {
+    return []
+  }
+}
+
+export default async function PostPage({ params }: PostPageProps) {
+  const { slug } = await params
+  const post = await getPost(slug)
+  
+  if (!post || !post.published) {
+    notFound()
+  }
+
+
+
   return (
-    <main className="min-h-screen bg-background">
+    <>
+      <JsonLd post={post} />
+      <main className="min-h-screen bg-background">
       {post.image && (
-        <div className="w-full h-80 overflow-hidden">
-          <img
-            src={post.image || "/placeholder.svg"}
+        <div className="w-full h-80 relative">
+          <OptimizedImage
+            src={post.image}
             alt={post.title}
-            className="w-full h-full object-cover"
+            fill
+            priority
+            className="w-full h-full"
+            sizes="100vw"
           />
         </div>
       )}
@@ -108,9 +162,7 @@ export default function PostPage({ params }: PostPageProps) {
             </div>
           )}
 
-          <div className="flex gap-2 pt-4 border-t border-border">
-            <LikeButton postId={post.id} />
-          </div>
+
         </header>
 
         <div className="prose prose-invert max-w-none mb-12">
@@ -140,23 +192,14 @@ export default function PostPage({ params }: PostPageProps) {
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/profile/${post.authorId}`}>View Profile</Link>
                 </Button>
-
-                <FollowButton userId={post.authorId} />
-
-                {isAuthor && (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/write?draft=${post.id}`}>Edit Post</Link>
-                  </Button>
-                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-border pt-8">
-          <CommentSection postId={post.id} />
-        </div>
+        <ClientInteractions postId={post.id} authorId={post.authorId} />
       </article>
     </main>
+    </>
   );
 }

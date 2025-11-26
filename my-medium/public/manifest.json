@@ -1,0 +1,16 @@
+{
+  "name": "WriteHub - Publishing Platform",
+  "short_name": "WriteHub",
+  "description": "Discover and share stories, ideas, and insights from writers and developers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

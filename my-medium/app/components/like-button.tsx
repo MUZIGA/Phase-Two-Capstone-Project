@@ -1,9 +1,8 @@
 'use client'
 
 import { useAuth } from '../lib/auth-context'
-import { useSocial } from '../lib/social-context'
-import { Button } from '../components/ui/button'
-import { useEffect } from 'react'
+import { usePostLike, useLikePost } from '../hooks/use-social'
+import { Button } from './ui/button'
 
 interface LikeButtonProps {
   postId: string
@@ -11,34 +10,33 @@ interface LikeButtonProps {
 
 export function LikeButton({ postId }: LikeButtonProps) {
   const { user } = useAuth()
-  const { postLikes, likePost, loadPostLike } = useSocial()
+  const { data: likeData, isLoading } = usePostLike(postId)
+  const likeMutation = useLikePost()
 
-  useEffect(() => {
-    loadPostLike(postId)
-  }, [postId, loadPostLike])
+  const displayLike = likeData || { liked: false, count: 0 }
 
-  const postLike = postLikes[postId] || { liked: false, count: 0 }
-
-  const handleLike = async () => {
+  const handleLike = () => {
     if (!user) {
       alert('Please sign in to like posts')
       return
     }
-    try {
-      await likePost(postId)
-    } catch (error) {
-      console.error('Failed to like post:', error)
-    }
+    likeMutation.mutate(postId)
   }
 
   return (
     <Button
-      variant={postLike.liked ? 'default' : 'outline'}
+      variant="ghost"
+      size="sm"
       onClick={handleLike}
-      className="gap-2"
+      className={`transition-all duration-200 ${
+        displayLike.liked ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'
+      } ${likeMutation.isPending ? 'scale-110' : 'scale-100'}`}
+      disabled={!user || likeMutation.isPending || isLoading}
     >
-      <span>👏</span>
-      <span>{postLike.count > 0 ? postLike.count : 'Like'}</span>
+      <span className={`mr-1 ${likeMutation.isPending ? 'animate-bounce' : ''}`}>
+        {displayLike.liked ? '❤️' : '🤍'}
+      </span>
+      {displayLike.count > 0 && displayLike.count}
     </Button>
   )
 }

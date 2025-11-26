@@ -1,6 +1,6 @@
 'use client'
 
-
+import { useEffect } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { useSocial } from '../lib/social-context'
 import { Button } from '../components/ui/button'
@@ -12,20 +12,23 @@ interface FollowButtonProps {
 
 export function FollowButton({ userId, variant = 'outline' }: FollowButtonProps) {
   const { user } = useAuth()
-  const { followUser, unfollowUser, isFollowing } = useSocial()
+  const { followUser, follows, loadFollow } = useSocial()
+
+  useEffect(() => {
+    if (user && userId) {
+      loadFollow(userId)
+    }
+  }, [userId, user, loadFollow])
 
   if (!user || user.id === userId) {
     return null
   }
 
-  const isUserFollowing = isFollowing(user.id, userId)
+  const followData = follows[userId]
+  const isUserFollowing = followData?.following || false
 
-  const handleFollow = () => {
-    if (isUserFollowing) {
-      unfollowUser(user.id, userId)
-    } else {
-      followUser(user.id, userId)
-    }
+  const handleFollow = async () => {
+    await followUser(userId)
   }
 
   return (

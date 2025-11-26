@@ -2,8 +2,8 @@
 
 import { Post } from '../lib/post-context'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Card } from './ui/card'
+import { OptimizedImage } from './optimized-image'
 
 interface FeedCardProps {
   post: Post
@@ -13,13 +13,13 @@ export function FeedCard({ post }: FeedCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {post.image && (
-        <div className="aspect-video overflow-hidden bg-muted">
-          <Image
-            src={post.image || "/placeholder.svg"}
+        <div className="aspect-video relative bg-muted">
+          <OptimizedImage
+            src={post.image}
             alt={post.title}
-            width={600}
-            height={400}
-            className="w-full h-full object-cover hover:scale-105 transition-transform"
+            fill
+            className="hover:scale-105 transition-transform"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )}

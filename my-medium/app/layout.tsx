@@ -1,24 +1,50 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { AuthProvider } from './lib/auth-context'
-import { PostProvider } from './lib/post-context'
+import { ReactQueryProvider } from './lib/react-query'
 import { SearchProvider } from './lib/search-context'
+import { PostProvider } from './lib/post-context'
 import { SocialProvider } from './lib/social-context'
 import { Header } from './components/header'
 import { Footer } from './components/footer'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const geist = Geist({ 
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-geist'
+});
+const geistMono = Geist_Mono({ 
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-geist-mono'
+});
 
 export const metadata: Metadata = {
-  title: 'WriteHub - Publishing Platform',
+  title: {
+    default: 'WriteHub - Publishing Platform',
+    template: '%s | WriteHub'
+  },
   description: 'Discover and share stories, ideas, and insights from writers and developers.',
-  generator: 'v0.app',
+  keywords: 'writing, publishing, developers, stories, tutorials, blog, community',
+  authors: [{ name: 'WriteHub Team' }],
+  creator: 'WriteHub',
+  publisher: 'WriteHub',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: '/icon.svg',
     apple: '/icon.svg',
   },
+  manifest: '/manifest.json',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  }
 }
 export default function RootLayout({
   children,
@@ -26,21 +52,23 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased flex flex-col min-h-screen`}>
-        <AuthProvider>
-          <PostProvider>
-            <SearchProvider>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
+      <body className="font-sans antialiased flex flex-col min-h-screen">
+        <ReactQueryProvider>
+          <AuthProvider>
+            <PostProvider>
               <SocialProvider>
-                <Header />
-                <div className="flex-1">
-                  {children}
-                </div>
-                <Footer />
+                <SearchProvider>
+                  <Header />
+                  <div className="flex-1">
+                    {children}
+                  </div>
+                  <Footer />
+                </SearchProvider>
               </SocialProvider>
-            </SearchProvider>
-          </PostProvider>
-        </AuthProvider>
+            </PostProvider>
+          </AuthProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   )

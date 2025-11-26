@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation'
-
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { FollowButton } from '@/components/follow-button'
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
+import Post from '@/lib/models/post'
 
 type ProfilePageProps = {
   params: Promise<{
@@ -19,29 +22,46 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     notFound()
   }
 
-  const createdAt =
-    user.createdAt instanceof Date ? user.createdAt : new Date(user.createdAt || new Date().toISOString())
+  const [posts, followersCount, followingCount] = await Promise.all([
+    Post.countDocuments({ author: id, published: true }),
+    User.countDocuments({ following: id }),
+    User.findById(id).select('following').then(u => u?.following?.length || 0)
+  ])
+
+  const createdAt = user.createdAt instanceof Date ? user.createdAt : new Date(user.createdAt || new Date().toISOString())
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-indigo-600 text-3xl font-semibold text-white">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-900 text-3xl font-semibold text-white">
             {user.name?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
-          <p className="text-slate-600">{user.email}</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{user.name}</h1>
+          <p className="text-gray-600 mb-4">{user.email}</p>
+          <FollowButton userId={id} />
+        </div>
+
+        <div className="grid grid-cols-3 gap-6 mb-8 text-center">
+          <div className="p-4">
+            <div className="text-2xl font-bold text-gray-900">{posts}</div>
+            <div className="text-sm text-gray-600">Posts</div>
+          </div>
+          <Link href={`/profile/${id}/followers`} className="p-4 hover:bg-gray-50 rounded-lg transition">
+            <div className="text-2xl font-bold text-gray-900">{followersCount}</div>
+            <div className="text-sm text-gray-600">Followers</div>
+          </Link>
+          <Link href={`/profile/${id}/following`} className="p-4 hover:bg-gray-50 rounded-lg transition">
+            <div className="text-2xl font-bold text-gray-900">{followingCount}</div>
+            <div className="text-sm text-gray-600">Following</div>
+          </Link>
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-xl border border-slate-100 p-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Bio</h2>
-            <p className="text-slate-700">{user.bio || 'No bio provided yet.'}</p>
-          </section>
-
-          <section className="rounded-xl border border-slate-100 p-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Member Since</h2>
-            <p className="text-slate-700">{createdAt.toLocaleDateString()}</p>
+          <section className="border-t border-gray-200 pt-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">About</h2>
+            <p className="text-gray-700 leading-relaxed">{user.bio || 'No bio provided yet.'}</p>
+            <p className="text-sm text-gray-500 mt-4">Member since {createdAt.toLocaleDateString()}</p>
           </section>
         </div>
       </div>

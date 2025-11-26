@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Comment from '@/lib/models/comment'
 import Post from '@/lib/models/post'
+import User from '@/lib/models/user'
 import { authenticateRequest } from '@/lib/auth'
 
 export async function GET(
@@ -26,7 +27,7 @@ export async function GET(
       authorId: c.author?._id?.toString(),
       authorAvatar: c.author?.avatar,
       content: c.content,
-      likes: (c.likes?.length || 0),
+      likes: c.likes || [],
       parentId: c.parent ? c.parent.toString() : null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
@@ -96,7 +97,7 @@ export async function POST(
           authorAvatar: (populatedComment!.author as any).avatar,
           content: populatedComment!.content,
           parentId: populatedComment!.parent ? (populatedComment!.parent as any).toString() : null,
-          likes: populatedComment!.likes?.length || 0,
+          likes: populatedComment!.likes || [],
           createdAt: populatedComment!.createdAt,
           updatedAt: populatedComment!.updatedAt,
         },

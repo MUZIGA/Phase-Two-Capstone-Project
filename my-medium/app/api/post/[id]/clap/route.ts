@@ -3,6 +3,40 @@ import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Post from '@/lib/models/post'
 import { authenticateRequest } from '@/lib/auth'
+import mongoose from 'mongoose'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await authenticateRequest(request)
+    const { id } = await params
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
+    }
+
+    await connectToDatabase()
+
+    const post = await Post.findById(id)
+    if (!post) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    }
+
+    const userId = auth?.userId
+    const likes = post.likes || []
+    const hasLiked = userId ? likes.some((likeId: any) => likeId.toString() === userId) : false
+
+    return NextResponse.json({
+      liked: hasLiked,
+      likesCount: likes.length,
+    })
+  } catch (error) {
+    console.error('[GET_CLAP_ERROR]', error)
+    return NextResponse.json({ error: 'Failed to get like status' }, { status: 500 })
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -15,6 +49,10 @@ export async function POST(
     }
 
     const { id } = await params
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
+    }
 
     await connectToDatabase()
 
