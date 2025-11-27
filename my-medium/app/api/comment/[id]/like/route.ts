@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Comment from '@/lib/models/comment'
-import User from '@/lib/models/user'
 import { authenticateRequest } from '@/lib/auth'
 
 export async function POST(

@@ -243,42 +243,16 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       return
     }
     
-    try {
-      const response = await fetch(`/api/users/${userId}/follow`, {
-        method: 'POST',
-        headers: getApiHeaders(),
-      }).catch(err => {
-        console.error('Network error:', err)
-        throw new Error('Network request failed')
-      })
-      
-      if (!response.ok) {
-        console.error('Follow API error:', response.status, response.statusText)
-        return
+    // Optimistic update only (API temporarily disabled)
+    const currentFollow = follows[userId] || { following: false, followersCount: 0, followingCount: 0 }
+    setFollows(prev => ({
+      ...prev,
+      [userId]: {
+        following: !currentFollow.following,
+        followersCount: currentFollow.followersCount + (!currentFollow.following ? 1 : -1),
+        followingCount: currentFollow.followingCount
       }
-      
-      const data = await response.json()
-      setFollows(prev => ({
-        ...prev,
-        [userId]: {
-          following: data.data.following,
-          followersCount: data.data.followersCount,
-          followingCount: data.data.followingCount
-        }
-      }))
-    } catch (error) {
-      console.error('Failed to follow user:', error)
-      // Optimistic update fallback
-      const currentFollow = follows[userId] || { following: false, followersCount: 0, followingCount: 0 }
-      setFollows(prev => ({
-        ...prev,
-        [userId]: {
-          following: !currentFollow.following,
-          followersCount: currentFollow.followersCount + (!currentFollow.following ? 1 : -1),
-          followingCount: currentFollow.followingCount
-        }
-      }))
-    }
+    }))
   }
 
   return (

@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server'
 import { connectToDatabase } from '@/lib/db'
 import Comment from '@/lib/models/comment'
 import Post from '@/lib/models/post'
-import User from '@/lib/models/user'
 import { authenticateRequest } from '@/lib/auth'
 
 export async function GET(

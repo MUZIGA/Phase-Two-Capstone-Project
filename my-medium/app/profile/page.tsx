@@ -24,7 +24,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ name: "", bio: "" });
 
-  // Update editData when user changes
+  
   React.useEffect(() => {
     if (user) {
       setEditData({ name: user.name || "", bio: user.bio || "" });
