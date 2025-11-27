@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 
 import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
+import { generateToken, createAuthResponse } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
@@ -34,18 +35,26 @@ export async function POST(request: Request) {
       following: [],
     })
 
-    return NextResponse.json(
+    const token = generateToken({
+      userId: newUser._id.toString(),
+      email: newUser.email,
+    })
+
+    return createAuthResponse(
       {
-        message: 'Account created successfully. Please sign in to continue.',
+        message: 'Account created successfully.',
         user: {
           id: newUser._id.toString(),
           name: newUser.name,
           email: newUser.email,
           avatar: newUser.avatar,
+          bio: newUser.bio,
           createdAt: newUser.createdAt,
         },
+        token,
       },
-      { status: 201 }
+      201,
+      token
     )
   } catch (error) {
     console.error('[SIGNUP_ERROR]', error)

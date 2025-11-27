@@ -50,6 +50,8 @@ const nextConfig: NextConfig = {
   // Experimental features
   experimental: {
     optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
+    workerThreads: false,
+    cpus: 1,
   },
 
   // Reduce sourcemap noise

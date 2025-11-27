@@ -11,7 +11,10 @@ import { usePosts } from "../lib/post-context";
 
 function usePostsByAuthor(authorId: string) {
   const { posts, isLoading } = usePosts();
-  const data = posts.filter(post => post.authorId === authorId && post.published);
+  const data = React.useMemo(() => 
+    posts.filter(post => post.authorId === authorId && post.published),
+    [posts, authorId]
+  );
   return { data, isLoading };
 }
 
@@ -50,11 +53,13 @@ export default function ProfilePage() {
   };
 
   const handleEdit = () => {
+    console.log('Edit button clicked');
     setEditData({ name: user?.name || "", bio: user?.bio || "" });
     setIsEditing(true);
   };
 
   const handleSave = async () => {
+    console.log('Save button clicked');
     if (!editData.name.trim()) {
       alert('Name cannot be empty');
       return;
@@ -65,15 +70,17 @@ export default function ProfilePage() {
       await updateProfile(editData);
       setIsEditing(false);
       alert('Profile updated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile. Please try again.');
+      const errorMessage = error?.message || 'Failed to update profile. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
+    console.log('Cancel button clicked');
     setEditData({ name: user?.name || "", bio: user?.bio || "" });
     setIsEditing(false);
   };
@@ -181,14 +188,16 @@ export default function ProfilePage() {
                     <Button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md"
+                      type="button"
+                      className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md hover:opacity-90 cursor-pointer"
                     >
                       {isSaving ? "Saving..." : "Save"}
                     </Button>
                     <Button
                       onClick={handleCancel}
                       variant="outline"
-                      className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-600"
+                      type="button"
+                      className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                     >
                       Cancel
                     </Button>
@@ -196,7 +205,8 @@ export default function ProfilePage() {
                 ) : (
                   <Button
                     onClick={handleEdit}
-                    className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md"
+                    type="button"
+                    className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md hover:opacity-90 cursor-pointer"
                   >
                     Edit Profile
                   </Button>

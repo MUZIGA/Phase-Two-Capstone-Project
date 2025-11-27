@@ -127,16 +127,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const data = await handleApiResponse(response)
 
-      if (autoLogin) {
+      if (autoLogin && data.user) {
         const authenticatedUser: User = {
           id: data.user.id,
           email: data.user.email,
           name: data.user.name,
+          bio: data.user.bio,
+          avatar: data.user.avatar,
           createdAt: data.user.createdAt,
         }
 
         setUser(authenticatedUser)
         localStorage.setItem('auth_user', JSON.stringify(authenticatedUser))
+        
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token)
+        }
       }
     } catch (error) {
       console.error('Signup error:', error)
@@ -158,6 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const token = localStorage.getItem('auth_token')
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.')
+      }
+
       const response = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: {
@@ -168,10 +178,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       const result = await handleApiResponse(response)
-      const updatedUser = result.user
       
+      if (!result.user) {
+        throw new Error('Invalid response from server')
+      }
+      
+      const updatedUser = result.user
       setUser(updatedUser)
       localStorage.setItem('auth_user', JSON.stringify(updatedUser))
+    } catch (error) {
+      console.error('Update profile error:', error)
+      throw error
     } finally {
       setIsLoading(false)
     }

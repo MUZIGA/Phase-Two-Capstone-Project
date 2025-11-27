@@ -146,7 +146,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchDrafts()
-    const interval = setInterval(fetchDrafts, 5000)
+    const interval = setInterval(fetchDrafts, 30000) // Reduced from 5s to 30s
     return () => clearInterval(interval)
   }, [fetchDrafts])
 
