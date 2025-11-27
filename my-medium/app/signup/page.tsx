@@ -1,9 +1,6 @@
 import { AuthForm } from "../components/Auth-form";
 
-export const metadata = {
-  title: "Create Account - WriteHub",
-  description: "Join WriteHub to publish your stories",
-};
+
 
 export default function SignupPage() {
   return (

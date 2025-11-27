@@ -1,10 +1,5 @@
 import { AuthForm } from '../components/Auth-form'
 
-export const metadata = {
-  title: 'Sign In - WriteHub',
-  description: 'Sign in to your WriteHub account',
-}
-
 export default function LoginPage() {
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4">
