@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Get user's following list
-      const user = await User.findById(followedBy).select('following');
+      const user = await _User.findById(followedBy).select('following');
       if (user && user.following.length > 0) {
         query.author = { $in: user.following };
       } else {
