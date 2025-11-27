@@ -18,7 +18,7 @@ function usePostsByAuthor(authorId: string) {
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const stats = useUserStats(user?.id || "");
-  const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
+  const { data: posts = [], isLoading: postsLoading, refreshPosts } = usePostsByAuthor(
     user?.id || ""
   );
   const [isEditing, setIsEditing] = useState(false);
@@ -55,13 +55,19 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!editData.name.trim()) {
+      alert('Name cannot be empty');
+      return;
+    }
+    
     setIsSaving(true);
     try {
       await updateProfile(editData);
       setIsEditing(false);
+      alert('Profile updated successfully!');
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile');
+      alert('Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -70,6 +76,29 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setEditData({ name: user?.name || "", bio: user?.bio || "" });
     setIsEditing(false);
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const response = await fetch(`/api/post/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        alert('Post deleted successfully!');
+        window.location.reload();
+      } else {
+        throw new Error('Failed to delete post');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Failed to delete post. Please try again.');
+    }
   };
   return (
     <ProtectedRoute>
@@ -94,11 +123,11 @@ export default function ProfilePage() {
                     <p className="text-2xl font-bold text-slate-800">{stats.totalPosts}</p>
                     <p className="text-sm text-slate-600">Posts</p>
                   </div>
-                  <Link href={`/profile/${user?.id}/followers`} className="text-center hover:bg-slate-100 rounded-lg p-2 transition-colors">
+                  <Link href={`/profile/${user?.id}/followers`} className="text-center rounded-lg p-2">
                     <p className="text-2xl font-bold text-slate-800">{stats.followers}</p>
                     <p className="text-sm text-slate-600">Followers</p>
                   </Link>
-                  <Link href={`/profile/${user?.id}/following`} className="text-center hover:bg-slate-100 rounded-lg p-2 transition-colors">
+                  <Link href={`/profile/${user?.id}/following`} className="text-center rounded-lg p-2">
                     <p className="text-2xl font-bold text-slate-800">{stats.following}</p>
                     <p className="text-sm text-slate-600">Following</p>
                   </Link>
@@ -152,14 +181,14 @@ export default function ProfilePage() {
                     <Button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md"
                     >
                       {isSaving ? "Saving..." : "Save"}
                     </Button>
                     <Button
                       onClick={handleCancel}
                       variant="outline"
-                      className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-600 transition-all duration-300 hover:bg-slate-50"
+                      className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-600"
                     >
                       Cancel
                     </Button>
@@ -167,7 +196,7 @@ export default function ProfilePage() {
                 ) : (
                   <Button
                     onClick={handleEdit}
-                    className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                    className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md"
                   >
                     Edit Profile
                   </Button>
@@ -200,7 +229,7 @@ export default function ProfilePage() {
             <div className="mt-8 rounded-2xl bg-white p-8 shadow-lg">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-slate-800">My Posts</h3>
-                <Link href="/write" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+                <Link href="/write" className="px-4 py-2 bg-teal-600 text-white rounded-lg">
                   Write New Post
                 </Link>
               </div>
@@ -221,7 +250,7 @@ export default function ProfilePage() {
                   </p>
                   <Link
                     href="/editor"
-                    className="inline-block rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                    className="inline-block rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg"
                   >
                     Create Your First Post
                   </Link>
@@ -229,44 +258,59 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {posts.map((post) => (
-                    <Link
-                      key={post.id}
-                      href={`/posts/${post.slug}`}
-                      className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                    >
-                      {post.image ? (
-                        <div className="relative mb-4 h-32 w-full overflow-hidden rounded-lg">
-                          <Image
-                            src={post.image}
-                            alt={post.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
-                            sizes="(max-width: 768px) 100vw, 50vw"
-                          />
-                        </div>
-                      ) : (
-                        <div className="mb-4 flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-teal-100 to-cyan-100">
-                          <span className="text-2xl">:page_facing_up:</span>
-                        </div>
-                      )}
-                      <h4 className="mb-2 text-lg font-bold text-slate-800 group-hover:text-teal-600 transition-colors">
-                        {post.title}
-                      </h4>
-                      <p className="mb-3 line-clamp-2 text-sm text-slate-600">
-                        {post.excerpt || stripHtml(post.content)}
-                      </p>
+                    <div key={post.id} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <Link href={`/posts/${post.slug}`}>
+                        {post.image ? (
+                          <div className="relative mb-4 h-32 w-full overflow-hidden rounded-lg">
+                            <Image
+                              src={post.image}
+                              alt={post.title}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mb-4 flex h-32 w-full items-center justify-center rounded-lg bg-gradient-to-br from-teal-100 to-cyan-100">
+                            <span className="text-2xl">📄</span>
+                          </div>
+                        )}
+                        <h4 className="mb-2 text-lg font-bold text-slate-800">
+                          {post.title}
+                        </h4>
+                        <p className="mb-3 line-clamp-2 text-sm text-slate-600">
+                          {post.excerpt || stripHtml(post.content)}
+                        </p>
+                      </Link>
                       <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>{formatDate(post.createdAt.toString())}</span>
                         <div className="flex items-center gap-3">
                           {post.views !== undefined && (
-                            <span>:eye: {post.views}</span>
+                            <span>👁 {post.views}</span>
                           )}
                           {post.likes !== undefined && (
-                            <span>:heart: {post.likes}</span>
+                            <span>❤️ {post.likes}</span>
                           )}
                         </div>
                       </div>
-                    </Link>
+                      <div className="mt-4 flex gap-2">
+                        <Link
+                          href={`/write?draft=${post.id}`}
+                          className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDeletePost(post.id);
+                          }}
+                          className="px-3 py-1 bg-red-500 text-white text-xs rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

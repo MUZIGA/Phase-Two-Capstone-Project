@@ -18,15 +18,19 @@ export default async function FollowingPage({ params }: FollowingPageProps) {
   }
 
   await connectToDatabase()
-  const user = await User.findById(id)
-    .populate('following', 'name email createdAt')
-    .lean()
+  const user = await User.findById(id).lean()
   
   if (!user) {
     notFound()
   }
 
-  const following = user.following || []
+  const followingIds = Array.isArray(user.following) ? user.following : []
+  
+  const following = followingIds.length > 0 
+    ? await User.find({ _id: { $in: followingIds } }, 'name email avatar bio createdAt')
+        .sort({ createdAt: -1 })
+        .lean()
+    : []
 
   return (
     <div className="min-h-screen bg-white py-12">

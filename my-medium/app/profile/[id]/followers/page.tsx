@@ -25,7 +25,8 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
   }
 
   const followers = await User.find({ following: id })
-    .select('name email createdAt')
+    .select('name email avatar createdAt')
+    .sort({ createdAt: -1 })
     .lean()
 
   return (

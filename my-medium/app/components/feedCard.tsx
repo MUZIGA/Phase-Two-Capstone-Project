@@ -3,7 +3,8 @@
 import { Post } from '../lib/post-context'
 import Link from 'next/link'
 import { Card } from './ui/card'
-import { OptimizedImage } from './optimized-image'
+import Image from 'next/image'
+import { FollowButton } from './follow-button'
 
 interface FeedCardProps {
   post: Post
@@ -14,11 +15,11 @@ export function FeedCard({ post }: FeedCardProps) {
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       {post.image && (
         <div className="aspect-video relative bg-muted">
-          <OptimizedImage
+          <Image
             src={post.image}
             alt={post.title}
             fill
-            className="hover:scale-105 transition-transform"
+            className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
@@ -67,7 +68,10 @@ export function FeedCard({ post }: FeedCardProps) {
               </p>
             </div>
           </div>
-          <span className="text-xs">{post.views || 0} views</span>
+          <div className="flex items-center gap-2">
+            {post.authorId && <FollowButton userId={post.authorId} variant="ghost" />}
+            <span className="text-xs">{post.views || 0} views</span>
+          </div>
         </div>
       </div>
     </Card>

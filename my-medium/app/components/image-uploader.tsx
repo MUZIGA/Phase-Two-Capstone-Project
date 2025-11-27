@@ -5,10 +5,11 @@ import { Button } from '../components/ui/button'
 
 interface ImageUploaderProps {
   onImageSelected: (imageData: string) => void
+  initialImage?: string
 }
 
-export function ImageUploader({ onImageSelected }: ImageUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(null)
+export function ImageUploader({ onImageSelected, initialImage }: ImageUploaderProps) {
+  const [preview, setPreview] = useState<string | null>(initialImage || null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 

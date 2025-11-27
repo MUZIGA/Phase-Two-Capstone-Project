@@ -180,7 +180,7 @@ export default function WritePage() {
               {/* Featured Image */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Featured Image</label>
-                <ImageUploader onImageSelected={setImage} />
+                <ImageUploader onImageSelected={setImage} initialImage={image} />
               </div>
 
               {/* Content */}
@@ -208,7 +208,12 @@ export default function WritePage() {
           <div className="space-y-6">
             {image && (
               <Card className="overflow-hidden">
-                <img src={image || "/placeholder.svg"} alt="Featured" className="w-full h-40 object-cover" />
+                <div className="relative w-full h-40">
+                  <img src={image} alt="Featured Image" className="w-full h-full object-cover" />
+                </div>
+                <div className="p-2 text-center">
+                  <p className="text-xs text-muted-foreground">Featured Image Preview</p>
+                </div>
               </Card>
             )}
 

@@ -236,12 +236,28 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       console.warn('Invalid user ID format:', userId)
       return
     }
+    
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      console.warn('No auth token found')
+      return
+    }
+    
     try {
       const response = await fetch(`/api/users/${userId}/follow`, {
         method: 'POST',
         headers: getApiHeaders(),
+      }).catch(err => {
+        console.error('Network error:', err)
+        throw new Error('Network request failed')
       })
-      const data = await handleApiResponse(response)
+      
+      if (!response.ok) {
+        console.error('Follow API error:', response.status, response.statusText)
+        return
+      }
+      
+      const data = await response.json()
       setFollows(prev => ({
         ...prev,
         [userId]: {
@@ -252,7 +268,16 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       }))
     } catch (error) {
       console.error('Failed to follow user:', error)
-      // Don't throw error to prevent UI crashes
+      // Optimistic update fallback
+      const currentFollow = follows[userId] || { following: false, followersCount: 0, followingCount: 0 }
+      setFollows(prev => ({
+        ...prev,
+        [userId]: {
+          following: !currentFollow.following,
+          followersCount: currentFollow.followersCount + (!currentFollow.following ? 1 : -1),
+          followingCount: currentFollow.followingCount
+        }
+      }))
     }
   }
 

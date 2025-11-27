@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Button } from "../../components/ui/button"
-import { OptimizedImage } from "../../components/optimized-image"
+import Image from "next/image"
 import { JsonLd } from "../../components/json-ld"
 import { ClientInteractions } from "./client-interactions"
 import Link from "next/link"
@@ -93,6 +93,16 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound()
   }
 
+  // Increment view count
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post/${post.id}/view`, {
+      method: 'POST',
+      cache: 'no-store'
+    })
+  } catch (error) {
+    console.log('Failed to increment view count')
+  }
+
 
 
   return (
@@ -101,12 +111,12 @@ export default async function PostPage({ params }: PostPageProps) {
       <main className="min-h-screen bg-background">
       {post.image && (
         <div className="w-full h-80 relative">
-          <OptimizedImage
+          <Image
             src={post.image}
             alt={post.title}
             fill
             priority
-            className="w-full h-full"
+            className="object-cover"
             sizes="100vw"
           />
         </div>

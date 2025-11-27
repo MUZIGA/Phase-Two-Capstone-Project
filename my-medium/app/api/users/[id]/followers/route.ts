@@ -31,6 +31,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: formattedFollowers,
+      count: formattedFollowers.length,
     })
   } catch (error) {
     console.error('[GET_FOLLOWERS_ERROR]', error)
