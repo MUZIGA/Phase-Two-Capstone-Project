@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const authorId = searchParams.get("authorId");
     const published = searchParams.get("published");
     const followedBy = searchParams.get("followedBy");
+    const slug = searchParams.get("slug");
     const limit = 10;
     const skip = (page - 1) * limit;
 
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     else query.published = published === "true";
 
     if (tag) query.tags = { $in: [tag] };
+    if (slug) query.slug = slug;
 
     if (authorId) {
       if (!mongoose.Types.ObjectId.isValid(authorId)) {
@@ -80,6 +82,7 @@ export async function GET(request: NextRequest) {
       image: p.image,
       views: p.views,
       likes: p.likes?.length || 0,
+      comments: 0, // TODO: Add actual comment count
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     }));
@@ -162,6 +165,7 @@ export async function POST(request: NextRequest) {
           image: populated.image,
           views: populated.views,
           likes: populated.likes?.length || 0,
+          comments: 0,
           createdAt: populated.createdAt,
           updatedAt: populated.updatedAt,
         },

@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'WriteHub - Publishing Platform',
-    template: '%s | WriteHub'
+    default: 'My Medium - Publishing Platform',
+    template: '%s | My Medium'
   },
   description: 'Discover and share stories, ideas, and insights from writers and developers.',
   keywords: 'writing, publishing, developers, stories, tutorials, blog, community',
