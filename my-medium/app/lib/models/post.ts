@@ -11,6 +11,8 @@ export interface PostDocument extends mongoose.Document {
   image?: string
   views: number
   likes: mongoose.Types.ObjectId[]
+  deleted?: boolean        // Add this line
+  deletedAt?: Date         // Add this line
   createdAt: Date
   updatedAt: Date
 }
@@ -81,4 +83,3 @@ PostSchema.index({ author: 1 })
 const PostModel: Model<PostDocument> = models.Post || mongoose.model<PostDocument>('Post', PostSchema)
 
 export default PostModel
-

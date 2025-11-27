@@ -35,26 +35,34 @@ export function OptimizedImage({
     )
   }
 
+  // Build props object conditionally
+  const imageProps: any = {
+    src,
+    alt,
+    priority,
+    sizes,
+    className: `transition-opacity duration-300 ${
+      isLoading ? 'opacity-0' : 'opacity-100'
+    } ${fill ? 'object-cover' : ''}`,
+    onLoad: () => setIsLoading(false),
+    onError: () => setHasError(true),
+    quality: 85,
+    unoptimized: src.startsWith('http'),
+    placeholder: "blur" as const,
+    blurDataURL: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+  };
+
+  // Only add width/height if not using fill
+  if (fill) {
+    imageProps.fill = true;
+  } else {
+    imageProps.width = width;
+    imageProps.height = height;
+  }
+
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      <Image
-        src={src}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
-        fill={fill}
-        priority={priority}
-        sizes={sizes}
-        className={`transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        } ${fill ? 'object-cover' : ''}`}
-        onLoad={() => setIsLoading(false)}
-        onError={() => setHasError(true)}
-        quality={85}
-        unoptimized={src.startsWith('http')}
-        placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-      />
+      <Image {...imageProps} />
       {isLoading && (
         <div className="absolute inset-0 bg-muted animate-pulse" />
       )}

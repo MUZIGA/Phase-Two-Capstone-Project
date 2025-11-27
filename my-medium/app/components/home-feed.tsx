@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { usePosts } from '../lib/post-context'
 import { useSearch } from '../lib/search-context'
 import { FeedCard } from './feedCard'

@@ -50,7 +50,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Card className="p-4">
             <div className="text-muted-foreground text-sm mb-1">Published Posts</div>
-            <div className="text-3xl font-bold text-foreground">{stats.postCount}</div>
+            <div className="text-3xl font-bold text-foreground">{stats.totalPosts}</div>
           </Card>
           <Card className="p-4">
             <div className="text-muted-foreground text-sm mb-1">Draft Posts</div>

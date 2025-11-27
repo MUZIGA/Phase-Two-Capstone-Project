@@ -53,7 +53,7 @@ function getApiHeaders() {
 
 async function handleApiResponse(response: Response) {
   const text = await response.text()
-  let data = {}
+  let data: any = {}
   try {
     data = JSON.parse(text)
   } catch {
@@ -82,7 +82,6 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         const commentsData = data.data || []
-        // Transform API response to match component expectations
         const transformedComments = commentsData.map((comment: any) => ({
           id: comment.id,
           postId: comment.postId,
@@ -103,7 +102,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addComment = async (postId: string, content: string, authorId: string, authorName: string, parentId?: string) => {
+  const addComment = async (postId: string, content: string, _authorId: string, _authorName: string, parentId?: string) => {
     if (!postId || typeof postId !== 'string' || postId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(postId)) {
       return
     }
@@ -132,7 +131,6 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         headers: getApiHeaders(),
       })
       await handleApiResponse(response)
-      // Reload comments for all posts (simplified)
       Object.keys(comments).forEach(postId => loadComments(postId))
     } catch (error) {
       console.error('Failed to delete comment:', error)
@@ -143,7 +141,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
     return comments[postId] || []
   }
 
-  const likeComment = async (commentId: string, userId: string) => {
+  const likeComment = async (commentId: string) => {
     if (!commentId || typeof commentId !== 'string' || commentId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(commentId)) {
       console.warn('Invalid comment ID format:', commentId)
       return
@@ -154,7 +152,6 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         headers: getApiHeaders(),
       })
       await handleApiResponse(response)
-      // Reload comments for all posts (simplified)
       Object.keys(comments).forEach(postId => loadComments(postId))
     } catch (error) {
       console.error('Failed to like comment:', error)
@@ -243,7 +240,6 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       return
     }
     
-    // Optimistic update only (API temporarily disabled)
     const currentFollow = follows[userId] || { following: false, followersCount: 0, followingCount: 0 }
     setFollows(prev => ({
       ...prev,

@@ -18,7 +18,7 @@ function usePostsByAuthor(authorId: string) {
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const stats = useUserStats(user?.id || "");
-  const { data: posts = [], isLoading: postsLoading, refreshPosts } = usePostsByAuthor(
+  const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
     user?.id || ""
   );
   const [isEditing, setIsEditing] = useState(false);

@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/db'
 import User from '@/lib/models/user'
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

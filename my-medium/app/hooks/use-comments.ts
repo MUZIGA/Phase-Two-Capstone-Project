@@ -55,7 +55,7 @@ export const useLikeComment = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async ({ commentId, postId }: { commentId: string; postId: string }) => {
+    mutationFn: async ({ commentId }: { commentId: string; postId: string }) => {
       const response = await fetch(`/api/comment/${commentId}/like`, {
         method: 'POST',
         headers: getAuthHeaders(),

@@ -41,21 +41,18 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
 
-  // Development configuration
+  // Allowed dev origins
   allowedDevOrigins: ['192.168.1.177'],
 
   // Experimental features
   experimental: {
     optimizePackageImports: ['lucide-react', '@tanstack/react-query'],
-    turbopack: {
-      root: __dirname,
-    },
   },
 
-  // Reduce noisy sourcemap issues in dev/prod
+  // Reduce sourcemap noise
   productionBrowserSourceMaps: false,
 };
 

@@ -57,13 +57,13 @@ export const useLikePost = () => {
       
       return { previousLike }
     },
-    onError: (err, postId, context) => {
+    onError: (_err, postId, context) => {
       // Rollback on error
       if (context?.previousLike) {
         queryClient.setQueryData(socialKeys.postLike(postId), context.previousLike)
       }
     },
-    onSettled: (data, error, postId) => {
+    onSettled: (data, _error, postId) => {
       // Update with server response
       if (data?.data) {
         queryClient.setQueryData(socialKeys.postLike(postId), {

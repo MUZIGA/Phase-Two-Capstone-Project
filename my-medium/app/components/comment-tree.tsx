@@ -156,7 +156,7 @@ function CommentItem({ comment, postId, level }: CommentItemProps) {
 
 export function CommentTree({ postId }: CommentTreeProps) {
   const { user } = useAuth()
-  const { comments, addComment, getCommentsByPost, loadComments } = useSocial()
+  const {addComment, getCommentsByPost, loadComments } = useSocial()
   const [commentText, setCommentText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 

@@ -9,6 +9,7 @@ export interface User {
 }
 
 export interface Post {
+  comments: number
   id: string
   title: string
   content: string

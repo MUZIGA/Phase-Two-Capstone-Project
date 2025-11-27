@@ -2,10 +2,10 @@
 
 import { Card } from '../components/ui/card'
 import { SearchBar } from '../components/search-bar'
-import { TagFilter } from '../components/tag-filter'
+// import { TagFilter } from '../components/tag-filter'
 import { FeedCard } from '../components/feedCard'
 import { PersonalizedFeed } from '../components/personalized-feed'
-import { useSearch } from '../lib/search-context'
+// import { useSearch } from '../lib/search-context'
 import { usePosts } from '../hooks/use-posts'
 import { useAuth } from '../lib/auth-context'
 import { Button } from '../components/ui/button'

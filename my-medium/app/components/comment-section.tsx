@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState} from 'react'
 import { useAuth } from '../lib/auth-context'
 import { useSocial } from '../lib/social-context'
 import { Button } from '../components/ui/button'
@@ -12,7 +12,7 @@ interface CommentSectionProps {
 
 export function CommentSection({ postId }: CommentSectionProps) {
   const { user } = useAuth()
-  const { comments, addComment, deleteComment, getCommentsByPost, likeComment, loadComments } = useSocial()
+  const {addComment, deleteComment, getCommentsByPost, likeComment} = useSocial()
   const [commentText, setCommentText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 

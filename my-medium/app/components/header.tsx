@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+// import { useState } from 'react'
 import { useAuth } from '../lib/auth-context'
 import { Button } from '../components/ui/button'
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, logout } = useAuth()
 
   return (
