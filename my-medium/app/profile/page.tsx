@@ -1,14 +1,36 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import React, { useState } from "react";
 import { useAuth } from "../lib/auth-context";
 import { useUserStats } from "../hooks/use-user-stats";
+import { Button } from "../components/ui/button";
+import ProtectedRoute from "../components/ProtectedRoute";
+import Container from "../components/Container";
+import { usePosts } from "../lib/post-context";
+
+function usePostsByAuthor(authorId: string) {
+  const { posts, isLoading } = usePosts();
+  const data = posts.filter(post => post.authorId === authorId && post.published);
+  return { data, isLoading };
+}
+
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const stats = useUserStats(user?.id || "");
   const { data: posts = [], isLoading: postsLoading } = usePostsByAuthor(
     user?.id || ""
   );
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ name: "", bio: "" });
+
+  // Update editData when user changes
+  React.useEffect(() => {
+    if (user) {
+      setEditData({ name: user.name || "", bio: user.bio || "" });
+    }
+  }, [user]);
+  const [isSaving, setIsSaving] = useState(false);
   const isLoading = postsLoading || !user;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -25,6 +47,29 @@ export default function ProfilePage() {
     const tmp = document.createElement("DIV");
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || "";
+  };
+
+  const handleEdit = () => {
+    setEditData({ name: user?.name || "", bio: user?.bio || "" });
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile(editData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      alert('Failed to update profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditData({ name: user?.name || "", bio: user?.bio || "" });
+    setIsEditing(false);
   };
   return (
     <ProtectedRoute>
@@ -64,7 +109,17 @@ export default function ProfilePage() {
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Full Name
                   </label>
-                  <p className="text-lg text-slate-800">{user?.name || "Not set"}</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.name}
+                      onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-lg focus:border-teal-500 focus:outline-none"
+                      placeholder="Enter your full name"
+                    />
+                  ) : (
+                    <p className="text-lg text-slate-800">{user?.name || "Not set"}</p>
+                  )}
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-6">
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -76,22 +131,79 @@ export default function ProfilePage() {
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Bio
                   </label>
-                  <p className="text-lg text-slate-800">
-                    {user?.bio || "No bio set yet. Tell us about yourself!"}
-                  </p>
+                  {isEditing ? (
+                    <textarea
+                      value={editData.bio}
+                      onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-lg focus:border-teal-500 focus:outline-none resize-none"
+                      rows={4}
+                      placeholder="Tell us about yourself..."
+                    />
+                  ) : (
+                    <p className="text-lg text-slate-800">
+                      {user?.bio || "No bio set yet. Tell us about yourself!"}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <button className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  Edit Profile
-                </button>
-                <button className="flex-1 rounded-lg border-2 border-teal-600 bg-white px-6 py-3 font-semibold text-teal-600 transition-all duration-300 hover:bg-teal-50">
-                  Change Password
-                </button>
+                {isEditing ? (
+                  <>
+                    <Button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="flex-1 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                    >
+                      {isSaving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      onClick={handleCancel}
+                      variant="outline"
+                      className="flex-1 rounded-lg border-2 border-slate-300 bg-white px-6 py-3 font-semibold text-slate-600 transition-all duration-300 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={handleEdit}
+                    className="w-full rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  >
+                    Edit Profile
+                  </Button>
+                )}
               </div>
             </div>
+            {/* Activity Summary */}
             <div className="mt-8 rounded-2xl bg-white p-8 shadow-lg">
-              <h3 className="mb-6 text-2xl font-bold text-slate-800">My Posts</h3>
+              <h3 className="mb-6 text-2xl font-bold text-slate-800">Activity Summary</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-4 bg-teal-50 rounded-lg">
+                  <div className="text-2xl font-bold text-teal-600">{posts.reduce((sum, post) => sum + (post.likes || 0), 0)}</div>
+                  <div className="text-sm text-slate-600">Total Likes</div>
+                </div>
+                <div className="text-center p-4 bg-cyan-50 rounded-lg">
+                  <div className="text-2xl font-bold text-cyan-600">{posts.reduce((sum, post) => sum + (post.comments || 0), 0)}</div>
+                  <div className="text-sm text-slate-600">Total Comments</div>
+                </div>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{posts.reduce((sum, post) => sum + (post.views || 0), 0)}</div>
+                  <div className="text-sm text-slate-600">Total Views</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{stats.followers}</div>
+                  <div className="text-sm text-slate-600">Followers</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-2xl bg-white p-8 shadow-lg">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-slate-800">My Posts</h3>
+                <Link href="/write" className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
+                  Write New Post
+                </Link>
+              </div>
               {isLoading && !user ? (
                 <div className="text-center">
                   <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
@@ -165,25 +277,3 @@ export default function ProfilePage() {
     </ProtectedRoute>
   );
 }
-
-
-
-
-
-
-
-
-
-
-import { usePosts } from "../lib/post-context";
-import ProtectedRoute from "../components/ProtectedRoute";
-import Container from "../components/Container";
-import React from "react";
-
-function usePostsByAuthor(authorId: string) {
-  const { posts, isLoading } = usePosts();
-  const data = posts.filter(post => post.authorId === authorId && post.published);
-  return { data, isLoading };
-}
-
-

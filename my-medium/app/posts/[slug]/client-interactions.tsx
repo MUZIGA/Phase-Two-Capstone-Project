@@ -17,7 +17,7 @@ export function ClientInteractions({ postId, authorId }: ClientInteractionsProps
       </div>
       
       <div className="flex gap-2 mt-3">
-        {authorId && <FollowButton userId={authorId} />}
+        {authorId && authorId.length === 24 && /^[0-9a-fA-F]{24}$/.test(authorId) && <FollowButton userId={authorId} />}
       </div>
       
       <div className="border-t border-border pt-8 mt-12">

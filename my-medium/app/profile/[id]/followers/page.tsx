@@ -12,6 +12,11 @@ interface FollowersPageProps {
 export default async function FollowersPage({ params }: FollowersPageProps) {
   const { id } = await params
 
+  // Validate MongoDB ObjectId format
+  if (!id || id.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(id)) {
+    notFound()
+  }
+
   await connectToDatabase()
   const user = await User.findById(id).lean()
   

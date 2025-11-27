@@ -122,6 +122,10 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteComment = async (commentId: string) => {
+    if (!commentId || typeof commentId !== 'string' || commentId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(commentId)) {
+      console.warn('Invalid comment ID format:', commentId)
+      return
+    }
     try {
       const response = await fetch(`/api/comment/${commentId}`, {
         method: 'DELETE',
@@ -132,7 +136,6 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       Object.keys(comments).forEach(postId => loadComments(postId))
     } catch (error) {
       console.error('Failed to delete comment:', error)
-      throw error
     }
   }
 
@@ -141,18 +144,20 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   }
 
   const likeComment = async (commentId: string, userId: string) => {
+    if (!commentId || typeof commentId !== 'string' || commentId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(commentId)) {
+      console.warn('Invalid comment ID format:', commentId)
+      return
+    }
     try {
       const response = await fetch(`/api/comment/${commentId}/like`, {
         method: 'POST',
         headers: getApiHeaders(),
-        body: JSON.stringify({ userId }),
       })
       await handleApiResponse(response)
       // Reload comments for all posts (simplified)
       Object.keys(comments).forEach(postId => loadComments(postId))
     } catch (error) {
       console.error('Failed to like comment:', error)
-      throw error
     }
   }
 
@@ -207,6 +212,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   // ===== FOLLOWS =====
   const loadFollow = async (userId: string) => {
     if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
+      console.warn('Invalid user ID format:', userId)
       return
     }
     try {
@@ -221,12 +227,13 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         }
       }))
     } catch (error) {
-      // Silently fail for invalid follow requests
+      console.warn('Failed to load follow status:', error)
     }
   }
 
   const followUser = async (userId: string) => {
     if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
+      console.warn('Invalid user ID format:', userId)
       return
     }
     try {
@@ -245,7 +252,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       }))
     } catch (error) {
       console.error('Failed to follow user:', error)
-      throw error
+      // Don't throw error to prevent UI crashes
     }
   }
 

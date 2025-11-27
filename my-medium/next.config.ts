@@ -44,6 +44,9 @@ const nextConfig: NextConfig = {
     ]
   },
 
+  // Development configuration
+  allowedDevOrigins: ['192.168.1.177'],
+
   // Experimental features
   experimental: {
     optimizePackageImports: ['lucide-react', '@tanstack/react-query'],

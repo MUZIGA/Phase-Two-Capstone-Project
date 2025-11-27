@@ -157,7 +157,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true)
     try {
-      const updatedUser = { ...user, ...data }
+      const token = localStorage.getItem('auth_token')
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      })
+
+      const result = await handleApiResponse(response)
+      const updatedUser = result.user
+      
       setUser(updatedUser)
       localStorage.setItem('auth_user', JSON.stringify(updatedUser))
     } finally {

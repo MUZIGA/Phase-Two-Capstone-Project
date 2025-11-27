@@ -8,10 +8,10 @@ import { authenticateRequest } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     await connectToDatabase()
 
     // Fetch all comments for the post; return flat list with parentId
@@ -42,7 +42,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await authenticateRequest(request)
@@ -50,7 +50,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const { content, parentId } = await request.json()
 
     if (!content || !content.trim()) {
