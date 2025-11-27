@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import Post from "@/lib/models/post";
-import User from "@/lib/models/user";
+import _User from "@/lib/models/user";
 import { authenticateRequest } from "@/lib/auth";
 import mongoose from "mongoose";
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
     
     // Ensure User model is registered
-    User;
+    _User;
 
     const query: any = { deleted: { $ne: true } };
     if (!published) query.published = true;
