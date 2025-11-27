@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import Post from "@/lib/models/post";
-import _User from "@/lib/models/user";
+import User from "@/lib/models/user";
 import { authenticateRequest } from "@/lib/auth";
 import mongoose from "mongoose";
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
     
     // Ensure User model is registered
-    _User;
+    User;
 
     const query: any = { deleted: { $ne: true } };
     if (!published) query.published = true;
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Get user's following list
-      const user = await _User.findById(followedBy).select('following');
+      const user = await User.findById(followedBy).select('following');
       if (user && user.following.length > 0) {
         query.author = { $in: user.following };
       } else {
