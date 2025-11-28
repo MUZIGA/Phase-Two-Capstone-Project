@@ -36,8 +36,8 @@ export function AuthForm({ type = 'signup' }: Props) {
     setIsSubmitting(true)
     try {
       if (type === 'signup') {
-        await signup(email, password, name, { autoLogin: true })
-        router.push('/profile')
+        await signup(email, password, name, { autoLogin: false })
+        router.push('/login')
       } else {
         await login(email, password)
         router.push('/write')

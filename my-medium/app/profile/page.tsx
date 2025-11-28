@@ -123,8 +123,10 @@ export default function ProfilePage() {
                 <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-cyan-400 text-4xl font-bold text-white shadow-lg">
                   {user?.name?.charAt(0).toUpperCase() || "U"}
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800">{user?.name}</h2>
-                <p className="text-slate-600">{user?.email}</p>
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-slate-800 mb-1">{user?.name || "User"}</h2>
+                  <p className="text-slate-600 text-sm">{user?.email || "No email"}</p>
+                </div>
                 <div className="mt-4 flex items-center justify-center gap-6">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-slate-800">{stats.totalPosts}</p>
