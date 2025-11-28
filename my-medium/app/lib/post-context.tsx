@@ -68,14 +68,14 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
   /* ------------------------ UTILS ------------------------ */
   const getAuthHeaders = useCallback((): HeadersInit => {
-    const token =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('auth_token')
-        : null
-
     return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+      'Content-Type': 'application/json'
+    }
+  }, [])
+
+  const getFetchOptions = useCallback((): RequestInit => {
+    return {
+      credentials: 'include'
     }
   }, [])
 
@@ -92,7 +92,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
   const fetchPosts = useCallback(async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/post?page=1')
+      const response = await fetch('/api/post?page=1', getFetchOptions())
       const data = await parseJsonSafe<{ success?: boolean; data?: any[] }>(response)
 
       if (response.ok && data?.success && Array.isArray(data.data)) {
@@ -106,7 +106,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [getFetchOptions])
 
   useEffect(() => {
     fetchPosts()
@@ -129,7 +129,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
       const response = await fetch(
         `/api/post?authorId=${user.id}&published=false`,
-        { headers: getAuthHeaders() }
+        { ...getFetchOptions(), headers: getAuthHeaders() }
       )
 
       const data = await parseJsonSafe<{ success?: boolean; data?: any[] }>(response)
@@ -142,7 +142,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
     } catch {
       setDrafts([])
     }
-  }, [getAuthHeaders])
+  }, [getAuthHeaders, getFetchOptions])
 
   useEffect(() => {
     fetchDrafts()
@@ -155,15 +155,11 @@ export function PostProvider({ children }: { children: ReactNode }) {
     async (title: string, content: string): Promise<string> => {
       setError(null)
       try {
-        const token =
-          typeof window !== 'undefined'
-            ? localStorage.getItem('auth_token')
-            : null
-
-        if (!token) throw new Error('You must be logged in to save drafts.')
+        // Authentication is handled via cookies
 
         const response = await fetch('/api/post', {
           method: 'POST',
+          ...getFetchOptions(),
           headers: getAuthHeaders(),
           body: JSON.stringify({
             title: title.trim(),
@@ -187,7 +183,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
         throw err
       }
     },
-    [getAuthHeaders]
+    [getAuthHeaders, getFetchOptions]
   )
 
   /* ------------------------ UPDATE DRAFT ------------------------ */
@@ -196,6 +192,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
       try {
         const response = await fetch(`/api/post/${id}`, {
           method: 'PUT',
+          ...getFetchOptions(),
           headers: getAuthHeaders(),
           body: JSON.stringify(updates),
         })
@@ -219,7 +216,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
         )
       )
     },
-    [getAuthHeaders]
+    [getAuthHeaders, getFetchOptions]
   )
 
   /* ------------------------ PUBLISH POST ------------------------ */
@@ -231,6 +228,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
         const response = await fetch(`/api/post/${id}`, {
           method: 'PUT',
+          ...getFetchOptions(),
           headers: getAuthHeaders(),
           body: JSON.stringify({
             published: true,
@@ -252,7 +250,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
         throw err
       }
     },
-    [getAuthHeaders]
+    [getAuthHeaders, getFetchOptions]
   )
 
   /* ------------------------ DELETE ------------------------ */
@@ -272,6 +270,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
       try {
         const response = await fetch(`/api/post/${id}`, {
           method: 'DELETE',
+          ...getFetchOptions(),
           headers: getAuthHeaders(),
         })
 
@@ -283,7 +282,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
         setError('Failed to delete post')
       }
     },
-    [getAuthHeaders]
+    [getAuthHeaders, getFetchOptions]
   )
 
   const deleteDraft = useCallback(
@@ -310,7 +309,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
 
   const refreshPosts = useCallback(async () => {
     try {
-      const response = await fetch('/api/post?page=1')
+      const response = await fetch('/api/post?page=1', getFetchOptions())
       const data = await parseJsonSafe<{ success?: boolean; data?: any[] }>(response)
 
       if (response.ok && data?.success && Array.isArray(data.data)) {
@@ -319,7 +318,7 @@ export function PostProvider({ children }: { children: ReactNode }) {
     } catch {
       setError('Failed to refresh posts')
     }
-  }, [])
+  }, [getFetchOptions])
 
   /* ------------------------ RETURN PROVIDER ------------------------ */
   return (

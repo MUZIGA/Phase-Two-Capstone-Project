@@ -209,11 +209,18 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   // ===== FOLLOWS =====
   const loadFollow = async (userId: string) => {
     if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
-      console.warn('Invalid user ID format:', userId)
       return
     }
+    
+    // Don't reload if already loaded
+    if (follows[userId]) {
+      return
+    }
+    
     try {
-      const response = await fetch(`/api/users/${userId}/follow`)
+      const response = await fetch(`/api/users/${userId}/follow`, {
+        cache: 'force-cache'
+      })
       const data = await handleApiResponse(response)
       setFollows(prev => ({
         ...prev,
@@ -224,7 +231,7 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         }
       }))
     } catch (error) {
-      console.warn('Failed to load follow status:', error)
+      // Silent fail
     }
   }
 

@@ -23,33 +23,49 @@ export function useUserStats(userId: string): UserStats {
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
 
-  // Fetch followers/following counts from API
+  // Fetch followers/following counts from API (with caching)
   useEffect(() => {
     if (!userId) return
+
+    let isMounted = true
+    const controller = new AbortController()
 
     async function fetchStats() {
       try {
         // Followers count
-        const followersRes = await fetch(`/api/users/${userId}/followers`)
-        if (followersRes.ok) {
+        const followersRes = await fetch(`/api/users/${userId}/followers`, {
+          signal: controller.signal,
+          cache: 'force-cache'
+        })
+        if (followersRes.ok && isMounted) {
           const data = await followersRes.json()
           setFollowers(data.count || 0)
         }
 
         // Following count
-        const followingRes = await fetch(`/api/users/${userId}/following`)
-        if (followingRes.ok) {
+        const followingRes = await fetch(`/api/users/${userId}/following`, {
+          signal: controller.signal,
+          cache: 'force-cache'
+        })
+        if (followingRes.ok && isMounted) {
           const data = await followingRes.json()
           setFollowing(data.count || 0)
         }
       } catch (err) {
-        console.error('Failed to fetch followers/following:', err)
-        setFollowers(0)
-        setFollowing(0)
+        if (err.name !== 'AbortError' && isMounted) {
+          console.error('Failed to fetch followers/following:', err)
+          setFollowers(0)
+          setFollowing(0)
+        }
       }
     }
 
     fetchStats()
+
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
   }, [userId])
 
   // Calculate post stats

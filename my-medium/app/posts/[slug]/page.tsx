@@ -13,12 +13,12 @@ interface PostPageProps {
 
 async function getPost(slug: string): Promise<Post | null> {
   try {
-    // Use the dedicated slug endpoint
+    // Use the main post endpoint with slug parameter
     const baseUrl = process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
       : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     
-    const response = await fetch(`${baseUrl}/api/post/${encodeURIComponent(slug)}`, {
+    const response = await fetch(`${baseUrl}/api/post?slug=${encodeURIComponent(slug)}&published=true`, {
       next: { revalidate: 3600 },
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ async function getPost(slug: string): Promise<Post | null> {
     }
     
     const data = await response.json()
-    return data.success ? data.data : null
+    return data.success && data.data?.length > 0 ? data.data[0] : null
   } catch (error) {
     console.error('Error fetching post:', error)
     return null

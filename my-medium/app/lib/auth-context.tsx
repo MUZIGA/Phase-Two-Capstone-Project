@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: API_HEADERS,
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       })
 
@@ -122,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: API_HEADERS,
+        credentials: 'include',
         body: JSON.stringify({ email, password, name }),
       })
 
@@ -163,17 +165,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true)
     try {
-      const token = localStorage.getItem('auth_token')
-      if (!token) {
-        throw new Error('No authentication token found. Please log in again.')
-      }
 
       const response = await fetch('/api/auth/profile', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(data)
       })
 

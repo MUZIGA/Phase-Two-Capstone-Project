@@ -91,9 +91,7 @@ export default function ProfilePage() {
     try {
       const response = await fetch(`/api/post/${postId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -261,7 +259,7 @@ export default function ProfilePage() {
                     You haven&apos;t published any posts yet.
                   </p>
                   <Link
-                    href="/editor"
+                    href="/write"
                     className="inline-block rounded-lg bg-gradient-to-r from-teal-600 to-cyan-500 px-6 py-3 font-semibold text-white shadow-lg"
                   >
                     Create Your First Post

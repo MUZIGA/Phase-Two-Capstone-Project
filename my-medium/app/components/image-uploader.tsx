@@ -34,9 +34,7 @@ export function ImageUploader({ onImageSelected, initialImage }: ImageUploaderPr
 
       const response = await fetch('/api/uploads', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
+        credentials: 'include',
         body: formData
       })
 

@@ -37,12 +37,15 @@ export function AuthForm({ type = 'signup' }: Props) {
     try {
       if (type === 'signup') {
         await signup(email, password, name, { autoLogin: false })
+        setError(null)
+        alert('Account created successfully! Please log in.')
         router.push('/login')
       } else {
         await login(email, password)
-        router.push('/write')
+        router.push('/')
       }
     } catch (err) {
+      console.error('Auth error:', err)
       if (err instanceof Error) {
         setError(err.message)
       } else {
