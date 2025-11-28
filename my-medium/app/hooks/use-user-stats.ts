@@ -52,7 +52,7 @@ export function useUserStats(userId: string): UserStats {
           setFollowing(data.count || 0)
         }
       } catch (err) {
-        if (err.name !== 'AbortError' && isMounted) {
+        if (err instanceof Error && err.name !== 'AbortError' && isMounted) {
           console.error('Failed to fetch followers/following:', err)
           setFollowers(0)
           setFollowing(0)
