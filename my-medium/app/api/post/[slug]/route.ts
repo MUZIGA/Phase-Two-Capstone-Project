@@ -5,7 +5,7 @@ import User from "@/lib/models/user";
 import mongoose from "mongoose";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {

@@ -10,14 +10,11 @@ import { usePosts } from '../hooks/use-posts'
 import { useAuth } from '../lib/auth-context'
 import { Button } from '../components/ui/button'
 import { useState, useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-
 export default function ExplorePage() {
   const { data: posts = [], isLoading, error, refetch } = usePosts({ published: true })
   const { user } = useAuth()
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
   const [feedType, setFeedType] = useState<'explore' | 'following'>('explore')
-  const queryClient = useQueryClient()
 
   // Refresh posts when page loads
   useEffect(() => {
