@@ -237,17 +237,17 @@ export function SocialProvider({ children }: { children: ReactNode }) {
 
   const followUser = async (userId: string) => {
     if (!userId || typeof userId !== 'string' || userId.length !== 24 || !/^[0-9a-fA-F]{24}$/.test(userId)) {
-      console.warn('Invalid user ID format:', userId)
       return
     }
     
     const token = localStorage.getItem('auth_token')
     if (!token) {
-      console.warn('No auth token found')
       return
     }
     
     const currentFollow = follows[userId] || { following: false, followersCount: 0, followingCount: 0 }
+    
+    // Optimistic update
     setFollows(prev => ({
       ...prev,
       [userId]: {
@@ -256,6 +256,40 @@ export function SocialProvider({ children }: { children: ReactNode }) {
         followingCount: currentFollow.followingCount
       }
     }))
+    
+    try {
+      const response = await fetch(`/api/users/${userId}/follow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await handleApiResponse(response)
+        setFollows(prev => ({
+          ...prev,
+          [userId]: {
+            following: data.following,
+            followersCount: data.followersCount,
+            followingCount: data.followingCount
+          }
+        }))
+      } else {
+        // Revert on failure
+        setFollows(prev => ({
+          ...prev,
+          [userId]: currentFollow
+        }))
+      }
+    } catch (error) {
+      // Revert on failure
+      setFollows(prev => ({
+        ...prev,
+        [userId]: currentFollow
+      }))
+    }
   }
 
   return (
