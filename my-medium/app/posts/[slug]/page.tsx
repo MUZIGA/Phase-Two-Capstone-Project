@@ -13,7 +13,10 @@ interface PostPageProps {
 
 async function getPost(slug: string): Promise<Post | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post?slug=${slug}`, {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/post?slug=${slug}`, {
       next: { revalidate: 3600 }
     })
     if (!response.ok) return null
@@ -76,7 +79,10 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 export async function generateStaticParams() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post?published=true&limit=100`)
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/post?published=true&limit=100`)
     if (!response.ok) return []
     const data = await response.json()
     return data.success ? data.data.map((post: Post) => ({ slug: post.slug })) : []
@@ -95,7 +101,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // Increment view count
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/post/${post.id}/view`, {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    await fetch(`${baseUrl}/api/post/${post.id}/view`, {
       method: 'POST',
       cache: 'no-store'
     })
