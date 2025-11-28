@@ -9,13 +9,20 @@ import { PersonalizedFeed } from '../components/personalized-feed'
 import { usePosts } from '../hooks/use-posts'
 import { useAuth } from '../lib/auth-context'
 import { Button } from '../components/ui/button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function ExplorePage() {
-  const { data: posts = [], isLoading, error } = usePosts()
+  const { data: posts = [], isLoading, error, refetch } = usePosts({ published: true })
   const { user } = useAuth()
   const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest')
   const [feedType, setFeedType] = useState<'explore' | 'following'>('explore')
+  const queryClient = useQueryClient()
+
+  // Refresh posts when page loads
+  useEffect(() => {
+    refetch()
+  }, [refetch])
 
   const sortedPosts = [...posts].sort((a, b) => {
     if (sortBy === 'popular') {
@@ -33,22 +40,31 @@ export default function ExplorePage() {
             <p className="text-muted-foreground">Discover amazing stories and insights</p>
           </div>
           
-          {user && (
-            <div className="flex gap-2">
-              <Button
-                variant={feedType === 'explore' ? 'default' : 'outline'}
-                onClick={() => setFeedType('explore')}
-              >
-                Explore
-              </Button>
-              <Button
-                variant={feedType === 'following' ? 'default' : 'outline'}
-                onClick={() => setFeedType('following')}
-              >
-                Following
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+              size="sm"
+            >
+              Refresh
+            </Button>
+            {user && (
+              <>
+                <Button
+                  variant={feedType === 'explore' ? 'default' : 'outline'}
+                  onClick={() => setFeedType('explore')}
+                >
+                  Explore
+                </Button>
+                <Button
+                  variant={feedType === 'following' ? 'default' : 'outline'}
+                  onClick={() => setFeedType('following')}
+                >
+                  Following
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

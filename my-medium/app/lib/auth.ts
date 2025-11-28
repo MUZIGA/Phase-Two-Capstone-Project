@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
 
 export interface JWTPayload {
   userId: string
@@ -16,6 +20,7 @@ export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload
   } catch (error) {
+    console.error('Token verification failed:', error)
     return null
   }
 }
@@ -39,13 +44,18 @@ export function getAuthToken(request: NextRequest): string | null {
 export async function authenticateRequest(
   request: NextRequest
 ): Promise<{ userId: string; email: string } | null> {
-  const token = getAuthToken(request)
-  if (!token) {
+  try {
+    const token = getAuthToken(request)
+    if (!token) {
+      return null
+    }
+
+    const payload = verifyToken(token)
+    return payload
+  } catch (error) {
+    console.error('Authentication failed:', error)
     return null
   }
-
-  const payload = verifyToken(token)
-  return payload
 }
 
 export function createAuthResponse(
@@ -61,6 +71,7 @@ export function createAuthResponse(
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 // 7 days
     })
   }
