@@ -13,17 +13,21 @@ interface PostPageProps {
 
 async function getPost(slug: string): Promise<Post | null> {
   try {
-    // Use the main post endpoint with slug parameter
-    const baseUrl = process.env.VERCEL_URL 
+    const baseUrl = process.env.NODE_ENV === 'production' 
       ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      : 'http://localhost:3000'
     
-    const response = await fetch(`${baseUrl}/api/post?slug=${encodeURIComponent(slug)}&published=true`, {
-      next: { revalidate: 3600 },
+    const url = `${baseUrl}/api/post?slug=${encodeURIComponent(slug)}&published=true`
+    console.log('Fetching post from:', url)
+    
+    const response = await fetch(url, {
+      next: { revalidate: 60 },
       headers: {
         'Content-Type': 'application/json',
       }
     })
+    
+    console.log('Response status:', response.status)
     
     if (!response.ok) {
       console.error(`Failed to fetch post: ${response.status} ${response.statusText}`)
@@ -31,6 +35,7 @@ async function getPost(slug: string): Promise<Post | null> {
     }
     
     const data = await response.json()
+    console.log('Post data:', data)
     return data.success && data.data?.length > 0 ? data.data[0] : null
   } catch (error) {
     console.error('Error fetching post:', error)
@@ -89,28 +94,8 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 }
 
 export async function generateStaticParams() {
-  try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    
-    const response = await fetch(`${baseUrl}/api/post?published=true&page=1&limit=100`, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    
-    if (!response.ok) {
-      console.error(`Failed to generate static params: ${response.status}`)
-      return []
-    }
-    
-    const data = await response.json()
-    return data.success ? data.data.map((post: Post) => ({ slug: post.slug })) : []
-  } catch (error) {
-    console.error('Error generating static params:', error)
-    return []
-  }
+  // Return empty array to generate pages on-demand
+  return []
 }
 
 export default async function PostPage({ params }: PostPageProps) {
@@ -121,25 +106,7 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound()
   }
 
-  // Increment view count (optional, don't fail if it doesn't work)
-  try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    
-    // Only increment views if we have a view endpoint
-    fetch(`${baseUrl}/api/post/${post.id}/view`, {
-      method: 'POST',
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    }).catch(() => {
-      // Silently fail - view counting is not critical
-    })
-  } catch (error) {
-    // Silently fail - view counting is not critical
-  }
+  // Skip view counting for now to avoid issues
 
 
 
