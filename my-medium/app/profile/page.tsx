@@ -1,21 +1,44 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../lib/auth-context";
 import { useUserStats } from "../hooks/use-user-stats";
 import { Button } from "../components/ui/button";
 import ProtectedRoute from "../components/ProtectedRoute";
 import Container from "../components/Container";
-import { usePosts } from "../lib/post-context";
+import type { Post } from "../lib/types";
 
 function usePostsByAuthor(authorId: string) {
-  const { posts, isLoading } = usePosts();
-  const data = React.useMemo(() => 
-    posts.filter(post => post.authorId === authorId && post.published),
-    [posts, authorId]
-  );
-  return { data, isLoading };
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPosts() {
+      if (!authorId) return;
+      
+      try {
+        const response = await fetch(`/api/post?authorId=${authorId}&published=true`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && Array.isArray(data.data)) {
+            setPosts(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, [authorId]);
+
+  return { data: posts, isLoading };
 }
 
 export default function ProfilePage() {
